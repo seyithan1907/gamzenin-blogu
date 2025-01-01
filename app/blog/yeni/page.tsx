@@ -192,7 +192,7 @@ export default function NewPost() {
               init={{
                 height: 500,
                 menubar: true,
-                readonly: false,
+                disabled: false,
                 plugins: [
                   'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                   'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
