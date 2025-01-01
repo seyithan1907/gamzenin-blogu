@@ -1,187 +1,130 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from "react";
 
 interface Comment {
   id: string;
-  postId: string;
-  username: string;
-  content: string;
+  text: string;
+  author: string;
   date: string;
-  parentId?: string; // Yanıt verilen yorumun ID'si
-  replies?: Comment[]; // Alt yorumlar
+  parentId?: string;
+  replies?: Comment[];
 }
 
-interface CommentsProps {
-  postId: string;
-}
+export default function Comments({ postId }: { postId: string }) {
+  const [newComment, setNewComment] = useState("");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
 
-const ADMIN_USER = "seyithan1907";
+  // Yorumları localStorage'dan al
+  const getComments = (): Comment[] => {
+    const allComments = JSON.parse(localStorage.getItem("comments") || "{}");
+    return allComments[postId] || [];
+  };
 
-export default function Comments({ postId }: CommentsProps) {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState('');
-  const [replyTo, setReplyTo] = useState<Comment | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  // Yeni yorum ekle
+  const addComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
 
-  useEffect(() => {
-    // Kullanıcı giriş durumunu kontrol et
-    const user = localStorage.getItem('user');
-    if (user) {
-      setIsLoggedIn(true);
-      setCurrentUser(user);
-      setIsAdmin(user === ADMIN_USER);
-    }
+    const comment: Comment = {
+      id: Date.now().toString(),
+      text: newComment,
+      author: "Kullanıcı", // Gerçek kullanıcı adı buraya gelecek
+      date: new Date().toISOString(),
+      ...(replyTo && { parentId: replyTo }),
+    };
 
-    // Yorumları yükle ve hiyerarşik yapıya dönüştür
-    const savedComments = JSON.parse(localStorage.getItem('comments') || '[]');
-    const postComments = savedComments.filter((comment: Comment) => comment.postId === postId);
-    
-    // Ana yorumları ve yanıtları düzenle
-    const organizedComments = postComments.reduce((acc: Comment[], comment: Comment) => {
+    const allComments = JSON.parse(localStorage.getItem("comments") || "{}");
+    const postComments = allComments[postId] || [];
+    allComments[postId] = [...postComments, comment];
+    localStorage.setItem("comments", JSON.stringify(allComments));
+
+    setNewComment("");
+    setReplyTo(null);
+  };
+
+  // Yorumları hiyerarşik yapıda düzenle
+  const organizeComments = (postComments: Comment[]): Comment[] => {
+    return postComments.reduce((acc: Comment[], comment: Comment) => {
       if (!comment.parentId) {
         // Ana yorum
-        const replies = postComments.filter(c => c.parentId === comment.id);
+        const replies = postComments.filter((c: Comment) => c.parentId === comment.id);
         return [...acc, { ...comment, replies }];
       }
       return acc;
     }, []);
-
-    setComments(organizedComments);
-  }, [postId]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!newComment.trim()) {
-      alert('Lütfen bir yorum yazın');
-      return;
-    }
-
-    // Yeni yorum oluştur
-    const comment: Comment = {
-      id: Date.now().toString(),
-      postId,
-      username: currentUser!,
-      content: newComment,
-      date: new Date().toISOString(),
-      parentId: replyTo?.id,
-      replies: []
-    };
-
-    // Tüm yorumları al
-    const allComments = JSON.parse(localStorage.getItem('comments') || '[]');
-    
-    // Yeni yorumu ekle
-    const updatedComments = [...allComments, comment];
-    
-    // LocalStorage'ı güncelle
-    localStorage.setItem('comments', JSON.stringify(updatedComments));
-    
-    // State'i güncelle
-    if (replyTo) {
-      // Yanıt ise, ana yorumun replies dizisine ekle
-      setComments(prevComments => 
-        prevComments.map(c => 
-          c.id === replyTo.id 
-            ? { ...c, replies: [...(c.replies || []), comment] }
-            : c
-        )
-      );
-    } else {
-      // Ana yorum ise, direkt listeye ekle
-      setComments(prev => [...prev, { ...comment, replies: [] }]);
-    }
-    
-    // Formu temizle
-    setNewComment('');
-    setReplyTo(null);
   };
 
-  const CommentItem = ({ comment, isReply = false }: { comment: Comment, isReply?: boolean }) => (
-    <div className={`bg-gray-800 p-4 rounded ${isReply ? 'ml-8 mt-2' : ''}`}>
-      <div className="flex justify-between items-start mb-2">
-        <span className="font-semibold text-blue-400">{comment.username}</span>
-        <span className="text-gray-500 text-sm">
-          {new Date(comment.date).toLocaleDateString('tr-TR')}
-        </span>
-      </div>
-      <p className="text-gray-300 mb-2">{comment.content}</p>
-      
-      {/* Admin için yanıtlama butonu */}
-      {isAdmin && !isReply && (
-        <button
-          onClick={() => setReplyTo(replyTo?.id === comment.id ? null : comment)}
-          className="text-blue-400 text-sm hover:text-blue-300"
-        >
-          {replyTo?.id === comment.id ? 'Vazgeç' : 'Yanıtla'}
-        </button>
-      )}
-
-      {/* Alt yorumlar */}
-      {comment.replies && comment.replies.length > 0 && (
-        <div className="mt-2 space-y-2">
-          {comment.replies.map(reply => (
-            <CommentItem key={reply.id} comment={reply} isReply={true} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  const comments = organizeComments(getComments());
 
   return (
     <div className="mt-8">
-      <h2 className="text-2xl font-bold mb-4">Yorumlar</h2>
-
-      {/* Yorum Formu */}
-      {isLoggedIn && (
-        <form onSubmit={handleSubmit} className="mb-6">
-          <div className="mb-2">
-            {replyTo && (
-              <div className="text-sm text-gray-400 mb-2">
-                <span>{replyTo.username} kullanıcısına yanıt yazıyorsunuz</span>
-                <button
-                  onClick={() => setReplyTo(null)}
-                  className="ml-2 text-blue-400 hover:text-blue-300"
-                >
-                  Vazgeç
-                </button>
-              </div>
-            )}
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder={replyTo ? "Yanıtınızı yazın..." : "Yorumunuzu yazın..."}
-              className="w-full p-3 rounded bg-gray-800 text-white border border-gray-700 min-h-[100px]"
-              required
-            />
-          </div>
+      <h3 className="text-xl font-bold mb-4">Yorumlar</h3>
+      
+      {/* Yorum formu */}
+      <form onSubmit={addComment} className="mb-6">
+        <textarea
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          placeholder={replyTo ? "Yanıtınızı yazın..." : "Yorumunuzu yazın..."}
+          className="w-full p-2 border rounded"
+          rows={3}
+        />
+        <div className="flex justify-between items-center mt-2">
+          {replyTo && (
+            <button
+              type="button"
+              onClick={() => setReplyTo(null)}
+              className="text-gray-500"
+            >
+              Yanıtlamayı İptal Et
+            </button>
+          )}
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="bg-blue-500 text-white px-4 py-2 rounded"
           >
-            {replyTo ? 'Yanıtla' : 'Yorum Yap'}
+            {replyTo ? "Yanıtla" : "Yorum Yap"}
           </button>
-        </form>
-      )}
+        </div>
+      </form>
 
-      {!isLoggedIn && (
-        <p className="text-gray-400 mb-6">
-          Yorum yapmak için lütfen <a href="/" className="text-blue-400 hover:text-blue-300">giriş yapın</a>.
-        </p>
-      )}
-
-      {/* Yorumlar Listesi */}
+      {/* Yorumları listele */}
       <div className="space-y-4">
-        {comments.length === 0 ? (
-          <p className="text-gray-400">Henüz yorum yapılmamış.</p>
-        ) : (
-          comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
-          ))
-        )}
+        {comments.map((comment) => (
+          <div key={comment.id} className="border-b pb-4">
+            <div className="flex justify-between">
+              <span className="font-bold">{comment.author}</span>
+              <span className="text-gray-500">
+                {new Date(comment.date).toLocaleDateString()}
+              </span>
+            </div>
+            <p className="mt-2">{comment.text}</p>
+            <button
+              onClick={() => setReplyTo(comment.id)}
+              className="text-blue-500 mt-2"
+            >
+              Yanıtla
+            </button>
+
+            {/* Yanıtları göster */}
+            {comment.replies && comment.replies.length > 0 && (
+              <div className="ml-8 mt-4 space-y-4">
+                {comment.replies.map((reply) => (
+                  <div key={reply.id} className="border-l-2 pl-4">
+                    <div className="flex justify-between">
+                      <span className="font-bold">{reply.author}</span>
+                      <span className="text-gray-500">
+                        {new Date(reply.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="mt-2">{reply.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
