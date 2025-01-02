@@ -15,9 +15,9 @@ interface User {
   username: string;
   isAdmin: boolean;
   joinDate: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
+  email: string | undefined;
+  firstName: string | undefined;
+  lastName: string | undefined;
   registrationDate?: string;
 }
 
@@ -49,14 +49,14 @@ export default function MemberManagement() {
     setRequests(savedRequests);
 
     // Varsayılan adminler
-    const defaultAdmins = [
+    const defaultAdmins: User[] = [
       { 
         username: 'seyithan1907', 
         isAdmin: true, 
         joinDate: new Date().toISOString(),
         email: 'seyithan@example.com',
         firstName: 'Seyithan',
-        lastName: 'Yıldız'
+        lastName: 'Yıldız',
       },
       { 
         username: 'gamzeaktas', 
@@ -64,7 +64,7 @@ export default function MemberManagement() {
         joinDate: new Date().toISOString(),
         email: 'gamze@example.com',
         firstName: 'Gamze',
-        lastName: 'Aktaş'
+        lastName: 'Aktaş',
       },
     ];
 
@@ -160,7 +160,10 @@ export default function MemberManagement() {
           return [...prevUsers, {
             username: request.username,
             isAdmin: true,
-            joinDate: new Date().toISOString()
+            joinDate: new Date().toISOString(),
+            email: undefined,
+            firstName: undefined,
+            lastName: undefined
           }];
         }
       });
