@@ -3,26 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Comments from '@/app/components/Comments';
-
-const ADMIN_USERS = [
-  {
-    username: "seyithan1907",
-    password: "hsy190778"
-  },
-  {
-    username: "gamzeaktas",
-    password: "gamze6302"
-  }
-];
+import Image from 'next/image';
+import Header from '@/app/components/Header';
 
 interface BlogPost {
   id: string;
   title: string;
   content: string;
+  summary?: string;
   date: string;
-  likes: number;
-  comments: any[];
+  category?: {
+    id: number;
+    name: string;
+  };
+  image?: string | null;
+  author?: string;
 }
 
 export default function BlogPost({ params }: { params: { id: string } }) {
@@ -31,30 +26,30 @@ export default function BlogPost({ params }: { params: { id: string } }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Admin kontrolü
-    const user = localStorage.getItem('user');
-    const isAdminUser = ADMIN_USERS.some(admin => admin.username === user);
-    setIsAdmin(isAdminUser);
-
     // Blog yazısını yükle
-    const posts = JSON.parse(localStorage.getItem('blogPosts') || '[]');
-    const currentPost = posts.find((p: BlogPost) => p.id === params.id);
+    const savedPosts = JSON.parse(localStorage.getItem('blog_posts') || '[]');
+    const foundPost = savedPosts.find((p: BlogPost) => p.id === params.id);
     
-    if (!currentPost) {
+    if (!foundPost) {
       router.push('/');
       return;
     }
 
-    setPost(currentPost);
+    setPost(foundPost);
+
+    // Admin kontrolü
+    const user = localStorage.getItem('user');
+    const isAdminUser = user === 'seyithan1907' || user === 'gamzeaktas';
+    setIsAdmin(isAdminUser);
   }, [params.id, router]);
 
   const handleDelete = () => {
-    if (!isAdmin) return;
+    if (!isAdmin || !post) return;
 
     if (window.confirm('Bu yazıyı silmek istediğinize emin misiniz?')) {
-      const posts = JSON.parse(localStorage.getItem('blogPosts') || '[]');
-      const updatedPosts = posts.filter((p: BlogPost) => p.id !== params.id);
-      localStorage.setItem('blogPosts', JSON.stringify(updatedPosts));
+      const savedPosts = JSON.parse(localStorage.getItem('blog_posts') || '[]');
+      const updatedPosts = savedPosts.filter((p: BlogPost) => p.id !== post.id);
+      localStorage.setItem('blog_posts', JSON.stringify(updatedPosts));
       router.push('/');
     }
   };
@@ -62,10 +57,11 @@ export default function BlogPost({ params }: { params: { id: string } }) {
   if (!post) return null;
 
   return (
-    <div className="min-h-screen bg-black text-white py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          {/* Üst Başlık */}
+    <div className="min-h-screen bg-black text-white">
+      <Header />
+      <main className="container mx-auto px-4 py-8">
+        <article className="max-w-4xl mx-auto">
+          {/* Üst Başlık ve Kontroller */}
           <div className="flex justify-between items-center mb-8">
             <Link
               href="/"
@@ -74,41 +70,48 @@ export default function BlogPost({ params }: { params: { id: string } }) {
               ← Ana Sayfaya Dön
             </Link>
             {isAdmin && (
-              <div className="space-x-4">
-                <Link
-                  href={`/blog/${params.id}/duzenle`}
-                  className="text-blue-400 hover:text-blue-300"
-                >
-                  Düzenle
-                </Link>
-                <button
-                  onClick={handleDelete}
-                  className="text-red-500 hover:text-red-400"
-                >
-                  Sil
-                </button>
-              </div>
+              <button
+                onClick={handleDelete}
+                className="text-red-500 hover:text-red-400"
+              >
+                Yazıyı Sil
+              </button>
             )}
           </div>
 
-          {/* Blog İçeriği */}
-          <article className="bg-gray-900 rounded-lg p-8">
-            <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
-            <div className="text-gray-400 mb-8">
-              {new Date(post.date).toLocaleDateString('tr-TR')}
+          {/* Kapak Resmi */}
+          {post.image && (
+            <div className="relative w-full h-96 mb-8">
+              <Image
+                src={post.image}
+                alt={post.title}
+                fill
+                className="object-cover rounded-lg"
+              />
             </div>
-            <div 
-              className="prose prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
-          </article>
+          )}
 
-          {/* Yorumlar */}
-          <div className="mt-12">
-            <Comments postId={params.id} />
-          </div>
-        </div>
-      </div>
+          {/* Başlık ve Meta Bilgiler */}
+          <header className="mb-8">
+            <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
+            <div className="flex items-center gap-4 text-gray-400 text-sm">
+              {post.category && (
+                <span className="bg-blue-600 text-white px-3 py-1 rounded">
+                  {post.category.name}
+                </span>
+              )}
+              {post.author && <span>Yazar: {post.author}</span>}
+              <span>{new Date(post.date).toLocaleDateString('tr-TR')}</span>
+            </div>
+          </header>
+
+          {/* İçerik */}
+          <div 
+            className="prose prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        </article>
+      </main>
     </div>
   );
 } 
