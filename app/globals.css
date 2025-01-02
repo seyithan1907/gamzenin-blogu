@@ -13,35 +13,72 @@ body {
   min-height: 100vh;
 }
 
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+  }
+
+  h1 {
+    @apply text-4xl mb-4;
+  }
+
+  h2 {
+    @apply text-2xl mb-3;
+  }
+
+  h3 {
+    @apply text-xl mb-2;
+  }
+
+  a {
+    @apply text-blue-400 hover:text-blue-300 transition-colors;
+  }
+
+  p {
+    @apply mb-4;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded transition-colors;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-700 text-white hover:bg-gray-600;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+
+  .card {
+    @apply bg-gray-900 p-6 rounded-lg;
+  }
+}
+
 .prose {
-  max-width: none;
+  @apply max-w-none;
 }
 
 .prose img {
-  margin: 0 auto;
+  @apply mx-auto;
 }
 
 .prose pre {
-  background-color: rgb(17 24 39);
-  color: rgb(229 231 235);
-  padding: 1rem;
-  border-radius: 0.5rem;
+  @apply bg-gray-900 text-gray-100 p-4 rounded;
 }
 
 .prose code {
-  color: rgb(229 231 235);
-  background-color: rgb(55 65 81);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
+  @apply text-gray-100 bg-gray-800 px-2 py-1 rounded;
 }
 
 .prose a {
-  color: rgb(59 130 246);
-  text-decoration: none;
-}
-
-.prose a:hover {
-  text-decoration: underline;
+  @apply text-blue-400 no-underline hover:underline;
 }
 
 .prose h1,
@@ -50,11 +87,11 @@ body {
 .prose h4,
 .prose h5,
 .prose h6 {
-  color: var(--foreground);
+  @apply text-white;
 }
 
 .prose p,
 .prose ul,
 .prose ol {
-  color: rgb(156 163 175);
+  @apply text-gray-400;
 }
