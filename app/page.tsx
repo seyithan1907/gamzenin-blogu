@@ -1,19 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { lazy, Suspense } from "react";
-
-// Lazy loading ile bileşenleri yükleme
-const AuthForm = lazy(() => import("./components/AuthForm"));
-const GoogleAds = lazy(() => import('./components/GoogleAds'));
-
-// Loading bileşeni
-const LoadingFallback = () => (
-  <div className="animate-pulse bg-gray-800 rounded-lg p-6">
-    <div className="h-8 bg-gray-700 rounded w-3/4 mb-4"></div>
-    <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-  </div>
-);
+import AuthForm from "./components/AuthForm";
 
 interface BlogPost {
   id: string;
@@ -124,12 +112,7 @@ export default function Home() {
 
           {/* Sağ Sidebar */}
           <div className="space-y-6">
-            <Suspense fallback={<LoadingFallback />}>
-              <AuthForm />
-            </Suspense>
-            <Suspense fallback={<LoadingFallback />}>
-              <GoogleAds />
-            </Suspense>
+            <AuthForm />
           </div>
         </div>
       </div>
