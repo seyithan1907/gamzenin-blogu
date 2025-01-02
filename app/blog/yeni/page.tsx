@@ -219,7 +219,12 @@ export default function NewPost() {
                 branding: false,
                 promotion: false,
                 skin: 'oxide-dark',
-                content_css: 'dark'
+                content_css: 'dark',
+                setup: function (editor) {
+                  editor.on('init', function () {
+                    editor.setContent('');
+                  });
+                }
               }}
               onEditorChange={(newContent) => setContent(newContent)}
             />
