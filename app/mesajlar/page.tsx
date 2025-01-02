@@ -38,14 +38,14 @@ export default function MessagesPage() {
   const markAsRead = (message: ContactMessage) => {
     const updatedMessages = messages.map(m => {
       if (m.id === message.id) {
-        return { ...m, status: 'read' };
+        return { ...m, status: 'read' as const };
       }
       return m;
     });
 
     setMessages(updatedMessages);
     localStorage.setItem('contact_messages', JSON.stringify(updatedMessages));
-    setSelectedMessage({ ...message, status: 'read' });
+    setSelectedMessage({ ...message, status: 'read' as const });
   };
 
   const handleReply = () => {
