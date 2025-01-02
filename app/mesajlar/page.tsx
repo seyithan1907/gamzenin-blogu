@@ -43,7 +43,12 @@ export default function MessagesPage() {
 
     // Mesajları yükle
     const savedMessages = JSON.parse(localStorage.getItem('contactMessages') || '[]');
-    setMessages(savedMessages);
+    // Tip dönüşümünü garantile
+    const typedMessages: ContactMessage[] = savedMessages.map((msg: any) => ({
+      ...msg,
+      status: msg.status === 'read' ? 'read' : 'unread'
+    }));
+    setMessages(typedMessages);
   }, [router]);
 
   const handleStatusChange = (id: string) => {
