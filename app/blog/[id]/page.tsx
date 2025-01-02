@@ -25,6 +25,7 @@ interface BlogPost {
     content: string;
     date: string;
   }>;
+  views?: number;
 }
 
 export default function BlogPost({ params }: { params: { id: string } }) {
@@ -59,6 +60,18 @@ export default function BlogPost({ params }: { params: { id: string } }) {
     // Beğeni kontrolü
     const likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
     setIsLiked(likedPosts.includes(params.id));
+
+    // Görüntülenme sayısını artır
+    const updatedPosts = savedPosts.map((p: BlogPost) => {
+      if (p.id === params.id) {
+        return {
+          ...p,
+          views: (p.views || 0) + 1
+        };
+      }
+      return p;
+    });
+    localStorage.setItem('blog_posts', JSON.stringify(updatedPosts));
   }, [params.id, router]);
 
   const handleDelete = () => {
@@ -292,6 +305,41 @@ export default function BlogPost({ params }: { params: { id: string } }) {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* İstatistikler ve Beğeni Butonu */}
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-800">
+            <div className="flex items-center space-x-6 text-gray-400">
+              <span className="flex items-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <span>{post.views || 0} görüntülenme</span>
+              </span>
+              <button 
+                onClick={handleLike}
+                className="flex items-center space-x-2 text-gray-400 hover:text-pink-500 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                <span>{post.likes || 0} beğeni</span>
+              </button>
+            </div>
+
+            <Link
+              href="/"
+              className="inline-flex items-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              <span>Ana Sayfaya Dön</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </Link>
           </div>
         </article>
       </main>
