@@ -54,9 +54,9 @@ export default function MessagesPage() {
   const handleStatusChange = (id: string) => {
     if (!isAdmin) return;
 
-    const updatedMessages = messages.map(message =>
+    const updatedMessages: ContactMessage[] = messages.map(message =>
       message.id === id
-        ? { ...message, status: message.status === 'unread' ? 'read' : 'unread' }
+        ? { ...message, status: message.status === 'unread' ? 'read' as const : 'unread' as const }
         : message
     );
 
@@ -68,7 +68,7 @@ export default function MessagesPage() {
     if (!isAdmin) return;
 
     if (window.confirm('Bu mesajı silmek istediğinize emin misiniz?')) {
-      const updatedMessages = messages.filter(message => message.id !== id);
+      const updatedMessages: ContactMessage[] = messages.filter(message => message.id !== id);
       setMessages(updatedMessages);
       localStorage.setItem('contactMessages', JSON.stringify(updatedMessages));
     }
