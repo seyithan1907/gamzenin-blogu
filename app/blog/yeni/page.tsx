@@ -78,31 +78,41 @@ export default function NewPost() {
       return;
     }
 
-    // Mevcut blog yazılarını al
-    const existingPosts = JSON.parse(localStorage.getItem('blog_posts') || '[]');
+    try {
+      // Mevcut blog yazılarını al
+      const existingPosts = JSON.parse(localStorage.getItem('blog_posts') || '[]');
 
-    // Kategori bilgisini al
-    const selectedCategory = CATEGORIES.find(c => c.id === parseInt(category));
+      // Kategori bilgisini al
+      const selectedCategory = CATEGORIES.find(c => c.id === parseInt(category));
 
-    // Yeni yazıyı ekle
-    const newPost = {
-      id: Date.now().toString(),
-      title,
-      summary,
-      content,
-      category: {
-        id: selectedCategory?.id,
-        name: selectedCategory?.name
-      },
-      date: new Date().toISOString(),
-      image: image // Resmi de kaydet
-    };
+      // Yeni yazıyı ekle
+      const newPost = {
+        id: Date.now().toString(),
+        title,
+        summary,
+        content,
+        category: {
+          id: selectedCategory?.id,
+          name: selectedCategory?.name
+        },
+        date: new Date().toISOString(),
+        image: image,
+        author: localStorage.getItem('user') // Yazar bilgisini ekle
+      };
 
-    // Yazıları güncelle
-    localStorage.setItem('blog_posts', JSON.stringify([...existingPosts, newPost]));
+      // Yazıları güncelle
+      const updatedPosts = [newPost, ...existingPosts];
+      localStorage.setItem('blog_posts', JSON.stringify(updatedPosts));
 
-    // Ana sayfaya yönlendir
-    router.push('/');
+      // Başarı mesajı göster
+      alert('Yazı başarıyla yayınlandı!');
+
+      // Ana sayfaya yönlendir
+      router.push('/');
+    } catch (error) {
+      console.error('Blog yazısı kaydedilirken hata oluştu:', error);
+      alert('Yazı kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    }
   };
 
   if (!isLoggedIn || !isAdmin) {
