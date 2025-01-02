@@ -1,55 +1,88 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-interface NotificationDetails {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
-  expectations: string;
-}
+const ADMIN_USERS = [
+  {
+    username: "seyithan1907",
+    password: "hsy190778"
+  },
+  {
+    username: "gamzeaktas",
+    password: "gamze6302"
+  }
+];
 
 interface Notification {
   id: string;
-  type: 'danismanlik' | 'sistem';
+  title: string;
   message: string;
   date: string;
-  read: boolean;
-  details?: NotificationDetails;
+  type: 'info' | 'success' | 'warning' | 'error';
+  isActive: boolean;
 }
 
 export default function NotificationsPage() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [newNotification, setNewNotification] = useState({
+    title: '',
+    message: '',
+    type: 'info' as const
+  });
 
   useEffect(() => {
+    // Admin kontrolü
     const user = localStorage.getItem('user');
-    if (user !== 'seyithan1907') {
+    const password = localStorage.getItem('password');
+    const isAdminUser = ADMIN_USERS.some(admin => 
+      admin.username === user && admin.password === password
+    );
+
+    if (!isAdminUser) {
       router.push('/');
       return;
     }
-    setCurrentUser(user);
 
-    const storedNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    setNotifications(storedNotifications);
+    setIsAdmin(true);
+
+    // Bildirimleri yükle
+    const savedNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    setNotifications(savedNotifications);
   }, [router]);
 
-  const markAsRead = (notification: Notification) => {
-    const updatedNotifications = notifications.map(n => {
-      if (n.id === notification.id) {
-        return { ...n, read: true };
-      }
-      return n;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const notification: Notification = {
+      id: Date.now().toString(),
+      ...newNotification,
+      date: new Date().toISOString(),
+      isActive: true
+    };
+
+    const updatedNotifications = [notification, ...notifications];
+    setNotifications(updatedNotifications);
+    localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+
+    setNewNotification({
+      title: '',
+      message: '',
+      type: 'info'
     });
+  };
+
+  const toggleNotification = (id: string) => {
+    const updatedNotifications = notifications.map(notification =>
+      notification.id === id
+        ? { ...notification, isActive: !notification.isActive }
+        : notification
+    );
 
     setNotifications(updatedNotifications);
     localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
-    setSelectedNotification(notification);
   };
 
   const deleteNotification = (id: string) => {
@@ -57,105 +90,113 @@ export default function NotificationsPage() {
       const updatedNotifications = notifications.filter(n => n.id !== id);
       setNotifications(updatedNotifications);
       localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
-      setSelectedNotification(null);
     }
   };
 
-  if (!currentUser) return null;
+  if (!isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-black text-white py-12">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Bildirimler</h1>
-          <Link
-            href="/"
-            className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
-          >
-            Ana Sayfaya Dön
-          </Link>
+        <h1 className="text-3xl font-bold mb-8">Bildirim Yönetimi</h1>
+
+        {/* Yeni Bildirim Formu */}
+        <div className="bg-gray-900 p-6 rounded-lg mb-8">
+          <h2 className="text-xl font-semibold mb-4">Yeni Bildirim Oluştur</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Başlık
+              </label>
+              <input
+                type="text"
+                value={newNotification.title}
+                onChange={(e) => setNewNotification(prev => ({ ...prev, title: e.target.value }))}
+                className="w-full p-2 rounded bg-gray-800 text-white border border-gray-700"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Mesaj
+              </label>
+              <textarea
+                value={newNotification.message}
+                onChange={(e) => setNewNotification(prev => ({ ...prev, message: e.target.value }))}
+                className="w-full p-2 rounded bg-gray-800 text-white border border-gray-700"
+                rows={4}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Tür
+              </label>
+              <select
+                value={newNotification.type}
+                onChange={(e) => setNewNotification(prev => ({ ...prev, type: e.target.value as any }))}
+                className="w-full p-2 rounded bg-gray-800 text-white border border-gray-700"
+              >
+                <option value="info">Bilgi</option>
+                <option value="success">Başarı</option>
+                <option value="warning">Uyarı</option>
+                <option value="error">Hata</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Bildirimi Yayınla
+            </button>
+          </form>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Bildirim Listesi */}
-          <div className="md:col-span-1 bg-gray-900 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Tüm Bildirimler</h2>
-            <div className="space-y-4">
-              {notifications.length === 0 ? (
-                <p className="text-gray-400">Bildirim bulunmuyor</p>
-              ) : (
-                notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                      selectedNotification?.id === notification.id
-                        ? 'bg-blue-900'
-                        : 'bg-gray-800 hover:bg-gray-700'
-                    } ${!notification.read ? 'border-l-4 border-blue-500' : ''}`}
-                    onClick={() => markAsRead(notification)}
-                  >
-                    <p className="font-medium">{notification.message}</p>
-                    <p className="text-sm text-gray-400 mt-1">
-                      {new Date(notification.date).toLocaleString('tr-TR')}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Bildirim Detayları */}
-          <div className="md:col-span-2 bg-gray-900 rounded-lg p-6">
-            {selectedNotification ? (
-              <div>
-                <div className="flex justify-between items-start mb-6">
+        {/* Bildirim Listesi */}
+        <div className="space-y-4">
+          {notifications.length === 0 ? (
+            <p className="text-gray-400">Henüz bildirim bulunmuyor.</p>
+          ) : (
+            notifications.map(notification => (
+              <div
+                key={notification.id}
+                className={`bg-gray-900 p-6 rounded-lg border-l-4 ${
+                  notification.type === 'info' ? 'border-blue-500' :
+                  notification.type === 'success' ? 'border-green-500' :
+                  notification.type === 'warning' ? 'border-yellow-500' :
+                  'border-red-500'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h2 className="text-xl font-semibold">Bildirim Detayları</h2>
-                    <p className="text-gray-400 mt-1">
-                      {new Date(selectedNotification.date).toLocaleString('tr-TR')}
+                    <h3 className="text-xl font-semibold">{notification.title}</h3>
+                    <p className="text-gray-400 text-sm">
+                      {new Date(notification.date).toLocaleDateString('tr-TR')}
                     </p>
                   </div>
-                  <button
-                    onClick={() => deleteNotification(selectedNotification.id)}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                  >
-                    Bildirimi Sil
-                  </button>
-                </div>
-
-                {selectedNotification.type === 'danismanlik' && selectedNotification.details && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <h3 className="font-medium text-gray-400">Ad</h3>
-                        <p>{selectedNotification.details.firstName}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-400">Soyad</h3>
-                        <p>{selectedNotification.details.lastName}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-400">Telefon</h3>
-                      <p>{selectedNotification.details.phone}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-400">E-posta</h3>
-                      <p>{selectedNotification.details.email}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-gray-400">Beklentiler</h3>
-                      <p className="whitespace-pre-wrap">{selectedNotification.details.expectations}</p>
-                    </div>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => toggleNotification(notification.id)}
+                      className={`px-3 py-1 rounded ${
+                        notification.isActive
+                          ? 'bg-green-600 hover:bg-green-700'
+                          : 'bg-gray-700 hover:bg-gray-600'
+                      }`}
+                    >
+                      {notification.isActive ? 'Aktif' : 'Pasif'}
+                    </button>
+                    <button
+                      onClick={() => deleteNotification(notification.id)}
+                      className="text-red-500 hover:text-red-400"
+                    >
+                      Sil
+                    </button>
                   </div>
-                )}
+                </div>
+                <p className="text-gray-300 whitespace-pre-wrap">{notification.message}</p>
               </div>
-            ) : (
-              <div className="text-center text-gray-400 py-12">
-                Detayları görüntülemek için bir bildirim seçin
-              </div>
-            )}
-          </div>
+            ))
+          )}
         </div>
       </div>
     </div>
