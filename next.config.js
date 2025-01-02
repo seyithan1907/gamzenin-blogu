@@ -8,10 +8,6 @@ const nextConfig = {
   },
   // Strict mode'u devre dışı bırak
   reactStrictMode: false,
-  // Experimental özellikleri etkinleştir
-  experimental: {
-    appDir: true,
-  },
 };
 
 module.exports = nextConfig; 
