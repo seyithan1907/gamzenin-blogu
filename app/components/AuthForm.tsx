@@ -3,10 +3,16 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const ADMIN_USER = {
-  username: "seyithan1907",
-  password: "hsy190778"
-};
+const ADMIN_USERS = [
+  {
+    username: "seyithan1907",
+    password: "hsy190778"
+  },
+  {
+    username: "gamzeaktas",
+    password: "gamze6302"
+  }
+];
 
 export default function AuthForm() {
   const [username, setUsername] = useState('');
@@ -20,15 +26,19 @@ export default function AuthForm() {
     if (user) {
       setIsLoggedIn(true);
       setCurrentUser(user);
-      setIsAdmin(user === ADMIN_USER.username);
+      setIsAdmin(ADMIN_USERS.some(admin => admin.username === user));
     }
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Önce admin girişini kontrol et
-    if (username === ADMIN_USER.username && password === ADMIN_USER.password) {
+    // Admin girişini kontrol et
+    const adminUser = ADMIN_USERS.find(
+      admin => admin.username === username && admin.password === password
+    );
+
+    if (adminUser) {
       localStorage.setItem('user', username);
       setIsLoggedIn(true);
       setCurrentUser(username);
