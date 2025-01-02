@@ -15,6 +15,24 @@ const ADMIN_USERS = [
   }
 ];
 
+const CATEGORIES = [
+  { id: 1, name: 'Sağlıklı Tarifler' },
+  { id: 2, name: 'Beslenme Bilimi' },
+  { id: 3, name: 'Diyet Türleri' },
+  { id: 4, name: 'Hastalık ve Beslenme' },
+  { id: 5, name: 'Fitness ve Sporcu Beslenmesi' },
+  { id: 6, name: 'Yeme Alışkanlıkları ve Psikoloji' },
+  { id: 7, name: 'Beslenme ve Çocuklar' },
+  { id: 8, name: 'Yaşam Tarzı ve Beslenme' },
+  { id: 9, name: 'Güncel Diyet Trendleri' },
+  { id: 10, name: 'Bitkisel Beslenme ve Veganlık' },
+  { id: 11, name: 'Detoks ve Arınma' },
+  { id: 12, name: 'Kilo Alma ve Verme Stratejileri' },
+  { id: 13, name: 'Sağlık İpuçları ve Tüyolar' },
+  { id: 14, name: 'Uzman Görüşleri ve Röportajlar' },
+  { id: 15, name: 'Gıda Güvenliği ve Etiket Okuma' }
+];
+
 interface BlogPost {
   id: string;
   title: string;
@@ -32,6 +50,8 @@ interface BlogPost {
 export default function Home() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   useEffect(() => {
     // Admin kontrolü
@@ -54,6 +74,17 @@ export default function Home() {
     }
   };
 
+  // Filtrelenmiş yazıları hesapla
+  const filteredPosts = posts.filter(post => {
+    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (post.summary?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+    
+    const matchesCategory = selectedCategory ? post.category?.id === selectedCategory : true;
+
+    return matchesSearch && matchesCategory;
+  });
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
       {/* Ana İçerik - Sol Taraf */}
@@ -64,22 +95,68 @@ export default function Home() {
           <p className="text-gray-400">Beslenme ve diyetetik adına her şey</p>
         </div>
 
-        {/* Blog Yazıları */}
-        {posts.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-400 text-lg mb-4">Henüz blog yazısı bulunmuyor.</p>
-            {isAdmin && (
-              <Link
-                href="/blog/yeni"
-                className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+        {/* Arama ve Filtreleme */}
+        <div className="bg-gray-900 p-6 rounded-lg mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Arama */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Yazılarda Ara
+              </label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Aranacak kelimeyi yazın..."
+                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
+              />
+            </div>
+
+            {/* Kategori Filtresi */}
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Kategori Seç
+              </label>
+              <select
+                value={selectedCategory || ""}
+                onChange={(e) => setSelectedCategory(e.target.value ? Number(e.target.value) : null)}
+                className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white"
               >
-                İlk Yazıyı Ekle
-              </Link>
+                <option value="">Tüm Kategoriler</option>
+                {CATEGORIES.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Blog Yazıları */}
+        {filteredPosts.length === 0 ? (
+          <div className="text-center py-12">
+            {posts.length === 0 ? (
+              <>
+                <p className="text-gray-400 text-lg mb-4">Henüz blog yazısı bulunmuyor.</p>
+                {isAdmin && (
+                  <Link
+                    href="/blog/yeni"
+                    className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                  >
+                    İlk Yazıyı Ekle
+                  </Link>
+                )}
+              </>
+            ) : (
+              <p className="text-gray-400 text-lg">
+                Arama kriterlerinize uygun yazı bulunamadı.
+              </p>
             )}
           </div>
         ) : (
           <div className="grid gap-8">
-            {posts.map((post) => (
+            {filteredPosts.map((post) => (
               <article
                 key={post.id}
                 className="bg-gray-900 p-6 rounded-lg hover:bg-gray-800 transition-colors"
