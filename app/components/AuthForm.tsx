@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Notifications from './Notifications';
 
 const ADMIN_USER = {
   username: "seyithan1907",
@@ -66,10 +65,7 @@ export default function AuthForm() {
     <div className="bg-gray-900 p-6 rounded-lg">
       {isLoggedIn ? (
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-white">Üye Paneli</h2>
-            <Notifications />
-          </div>
+          <h2 className="text-xl font-semibold text-white">Üye Paneli</h2>
           <p className="text-gray-400">Hoş geldin, {currentUser}</p>
           <div className="space-y-2">
             {isAdmin && (
@@ -193,14 +189,6 @@ export default function AuthForm() {
           >
             İletişim Formu
           </Link>
-          {isAdmin && (
-            <Link
-              href="/uyeler"
-              className="block w-full text-center bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700 transition-colors"
-            >
-              Üye Listesi
-            </Link>
-          )}
         </div>
       </div>
     </div>
