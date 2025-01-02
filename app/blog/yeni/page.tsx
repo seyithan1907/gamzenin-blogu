@@ -6,6 +6,17 @@ import { Editor } from '@tinymce/tinymce-react';
 import Header from '@/app/components/Header';
 import Image from 'next/image';
 
+const ADMIN_USERS = [
+  {
+    username: "seyithan1907",
+    password: "hsy190778"
+  },
+  {
+    username: "gamzeaktas",
+    password: "gamze6302"
+  }
+];
+
 // Kategoriler
 const CATEGORIES = [
   { id: 1, name: 'Sağlıklı Tarifler' },
@@ -37,7 +48,9 @@ export default function NewPost() {
 
   useEffect(() => {
     const user = localStorage.getItem('user');
-    if (user === 'seyithan1907') {
+    const isAdminUser = ADMIN_USERS.some(admin => admin.username === user);
+    
+    if (isAdminUser) {
       setIsLoggedIn(true);
       setIsAdmin(true);
     } else {
