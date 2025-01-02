@@ -10,4 +10,51 @@
 body {
   color: var(--foreground);
   background: var(--background);
+  min-height: 100vh;
+}
+
+.prose {
+  max-width: none;
+}
+
+.prose img {
+  margin: 0 auto;
+}
+
+.prose pre {
+  background-color: rgb(17 24 39);
+  color: rgb(229 231 235);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.prose code {
+  color: rgb(229 231 235);
+  background-color: rgb(55 65 81);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.prose a {
+  color: rgb(59 130 246);
+  text-decoration: none;
+}
+
+.prose a:hover {
+  text-decoration: underline;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  color: var(--foreground);
+}
+
+.prose p,
+.prose ul,
+.prose ol {
+  color: rgb(156 163 175);
 }
