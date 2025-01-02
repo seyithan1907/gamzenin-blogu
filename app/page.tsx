@@ -1,6 +1,19 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { lazy, Suspense } from "react";
+
+// Lazy loading ile bileşenleri yükleme
+const AuthForm = lazy(() => import("./components/AuthForm"));
+const GoogleAds = lazy(() => import('./components/GoogleAds'));
+
+// Loading bileşeni
+const LoadingFallback = () => (
+  <div className="animate-pulse bg-gray-800 rounded-lg p-6">
+    <div className="h-8 bg-gray-700 rounded w-3/4 mb-4"></div>
+    <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+  </div>
+);
 
 interface BlogPost {
   id: string;
@@ -34,50 +47,49 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white py-12">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Gamzenin Blogu</h1>
-          {isAdmin && (
-            <Link
-              href="/blog/yeni"
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-            >
-              Yeni Yazı Ekle
-            </Link>
-          )}
-        </div>
+    <div className="min-h-screen bg-black text-white">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Ana İçerik - Sol Taraf */}
+          <div className="md:col-span-3">
+            {/* Blog Başlığı */}
+            <div className="bg-gray-900 p-6 rounded-lg mb-8">
+              <h1 className="text-4xl font-bold text-white mb-2">Gamzenin Bloğu</h1>
+              <p className="text-gray-400">Beslenme ve diyetetik adına her şey</p>
+            </div>
 
-        {posts.length === 0 ? (
-          <p className="text-center text-gray-400 py-12">
-            Henüz blog yazısı bulunmuyor.
-          </p>
-        ) : (
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => (
-                <article 
-                  key={post.id}
-                className="bg-gray-900 rounded-lg overflow-hidden shadow-lg"
-              >
-                <div className="p-6">
-                  <h2 className="text-xl font-bold mb-2">
-                    <Link
-                      href={`/blog/${post.id}`}
-                      className="hover:text-blue-400 transition-colors"
-                    >
-                      {post.title}
+            {/* Blog Yazıları */}
+            {posts.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-400 text-lg mb-4">Henüz blog yazısı bulunmuyor.</p>
+                {isAdmin && (
+                  <Link
+                    href="/blog/yeni"
+                    className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                  >
+                    İlk Yazıyı Ekle
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="grid gap-8">
+                {posts.map((post) => (
+                  <article
+                    key={post.id}
+                    className="bg-gray-900 p-6 rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    <Link href={`/blog/${post.id}`}>
+                      <h2 className="text-2xl font-bold mb-4 hover:text-blue-400 transition-colors">
+                        {post.title}
+                      </h2>
                     </Link>
-                    </h2>
-                  <p className="text-gray-400 text-sm mb-4">
-                    {new Date(post.date).toLocaleDateString("tr-TR")}
-                  </p>
-                  <div className="prose prose-invert max-w-none">
-                    {post.content.length > 150
-                      ? post.content.substring(0, 150) + "..."
-                      : post.content}
-                  </div>
-                  <div className="mt-4 flex justify-between items-center">
-                      <Link 
+                    <p className="text-gray-400 mb-4">
+                      {post.content.length > 200
+                        ? post.content.substring(0, 200) + "..."
+                        : post.content}
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <Link
                         href={`/blog/${post.id}`}
                         className="text-blue-400 hover:text-blue-300"
                       >
@@ -85,19 +97,42 @@ export default function Home() {
                       </Link>
                       {isAdmin && (
                         <button
-                        onClick={() => handleDelete(post.id)}
-                        className="text-red-500 hover:text-red-400"
-                      >
+                          onClick={() => handleDelete(post.id)}
+                          className="text-red-500 hover:text-red-400"
+                        >
                           Sil
                         </button>
                       )}
                     </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-        )}
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {/* Yeni Yazı Ekle Butonu */}
+            {isAdmin && posts.length > 0 && (
+              <div className="mt-8 text-center">
+                <Link
+                  href="/blog/yeni"
+                  className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                >
+                  Yeni Yazı Ekle
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Sağ Sidebar */}
+          <div className="space-y-6">
+            <Suspense fallback={<LoadingFallback />}>
+              <AuthForm />
+            </Suspense>
+            <Suspense fallback={<LoadingFallback />}>
+              <GoogleAds />
+            </Suspense>
+          </div>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
