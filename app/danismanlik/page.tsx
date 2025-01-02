@@ -31,11 +31,11 @@ export default function ConsultationPage() {
     // Yeni bildirim oluştur
     const newNotification = {
       id: Date.now().toString(),
-      type: 'danismanlik',
-      message: `Yeni danışmanlık başvurusu: ${formData.firstName} ${formData.lastName}`,
+      title: 'Yeni Danışmanlık Başvurusu',
+      message: `Ad Soyad: ${formData.firstName} ${formData.lastName}\nTelefon: ${formData.phone}\nE-posta: ${formData.email}\n\nBeklentiler:\n${formData.expectations}`,
       date: new Date().toISOString(),
-      read: false,
-      details: formData
+      type: 'info',
+      isActive: true
     };
 
     // Bildirimi listeye ekle

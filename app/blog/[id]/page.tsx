@@ -33,7 +33,8 @@ export default function BlogPost({ params }: { params: { id: string } }) {
   useEffect(() => {
     // Admin kontrolü
     const user = localStorage.getItem('user');
-    setIsAdmin(ADMIN_USERS.some(admin => admin.username === user));
+    const isAdminUser = ADMIN_USERS.some(admin => admin.username === user);
+    setIsAdmin(isAdminUser);
 
     // Blog yazısını yükle
     const posts = JSON.parse(localStorage.getItem('blogPosts') || '[]');
@@ -89,17 +90,17 @@ export default function BlogPost({ params }: { params: { id: string } }) {
               </div>
             )}
           </div>
-          
+
           {/* Blog İçeriği */}
           <article className="bg-gray-900 rounded-lg p-8">
             <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
             <div className="text-gray-400 mb-8">
               {new Date(post.date).toLocaleDateString('tr-TR')}
             </div>
-          <div 
-            className="prose prose-invert max-w-none"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+            <div 
+              className="prose prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
           </article>
 
           {/* Yorumlar */}
