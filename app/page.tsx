@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import AuthForm from "./components/AuthForm";
+import Image from "next/image";
 
 const ADMIN_USERS = [
   {
@@ -18,9 +19,14 @@ interface BlogPost {
   id: string;
   title: string;
   content: string;
+  summary?: string;
   date: string;
-  likes: number;
-  comments: any[];
+  category?: {
+    id: number;
+    name: string;
+  };
+  image?: string | null;
+  author?: string;
 }
 
 export default function Home() {
@@ -34,7 +40,7 @@ export default function Home() {
     setIsAdmin(isAdminUser);
 
     // Blog postlarını yükle
-    const savedPosts = JSON.parse(localStorage.getItem("blogPosts") || "[]");
+    const savedPosts = JSON.parse(localStorage.getItem("blog_posts") || "[]");
     setPosts(savedPosts);
   }, []);
 
@@ -44,7 +50,7 @@ export default function Home() {
     if (window.confirm("Bu yazıyı silmek istediğinize emin misiniz?")) {
       const updatedPosts = posts.filter((post) => post.id !== id);
       setPosts(updatedPosts);
-      localStorage.setItem("blogPosts", JSON.stringify(updatedPosts));
+      localStorage.setItem("blog_posts", JSON.stringify(updatedPosts));
     }
   };
 
@@ -78,31 +84,52 @@ export default function Home() {
                 key={post.id}
                 className="bg-gray-900 p-6 rounded-lg hover:bg-gray-800 transition-colors"
               >
+                {post.image && (
+                  <div className="relative w-full h-64 mb-4">
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      className="object-cover rounded"
+                    />
+                  </div>
+                )}
                 <Link href={`/blog/${post.id}`}>
                   <h2 className="text-2xl font-bold mb-4 hover:text-blue-400 transition-colors">
                     {post.title}
                   </h2>
                 </Link>
+                {post.category && (
+                  <span className="inline-block bg-blue-600 text-white text-sm px-3 py-1 rounded mb-4">
+                    {post.category.name}
+                  </span>
+                )}
                 <p className="text-gray-400 mb-4">
-                  {post.content.length > 200
+                  {post.summary || (post.content.length > 200
                     ? post.content.substring(0, 200) + "..."
-                    : post.content}
+                    : post.content)}
                 </p>
-                <div className="flex justify-between items-center">
-                  <Link
-                    href={`/blog/${post.id}`}
-                    className="text-blue-400 hover:text-blue-300"
-                  >
-                    Devamını Oku →
-                  </Link>
-                  {isAdmin && (
-                    <button
-                      onClick={() => handleDelete(post.id)}
-                      className="text-red-500 hover:text-red-400"
+                <div className="flex justify-between items-center text-sm text-gray-500">
+                  <div>
+                    {post.author && <span>Yazar: {post.author} | </span>}
+                    <span>{new Date(post.date).toLocaleDateString('tr-TR')}</span>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Link
+                      href={`/blog/${post.id}`}
+                      className="text-blue-400 hover:text-blue-300"
                     >
-                      Sil
-                    </button>
-                  )}
+                      Devamını Oku →
+                    </Link>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDelete(post.id)}
+                        className="text-red-500 hover:text-red-400"
+                      >
+                        Sil
+                      </button>
+                    )}
+                  </div>
                 </div>
               </article>
             ))}
