@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Header from '@/app/components/Header';
 import { getBlogPost, updateBlogPost, deleteBlogPost, incrementViews, getLikeStatus, toggleLike, type BlogPost } from '@/lib/blog';
-import { getComments, addComment, type Comment } from '@/lib/comments';
+import { getComments, addComment, deleteComment, type Comment } from '@/lib/comments';
 
 const ADMIN_USERS = [
   {
@@ -132,6 +132,22 @@ export default function BlogPost({ params }: { params: { id: string } }) {
     } catch (err) {
       console.error('Error:', err);
       setError('Yorum eklenirken bir hata oluştu');
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!window.confirm('Bu yorumu silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      await deleteComment(commentId);
+      // Yorumları yeniden yükle
+      const commentsData = await getComments(params.id);
+      setComments(commentsData);
+    } catch (err) {
+      console.error('Error:', err);
+      setError('Yorum silinirken bir hata oluştu');
     }
   };
 
@@ -277,9 +293,21 @@ export default function BlogPost({ params }: { params: { id: string } }) {
               <div key={comment.id} className="border-b border-gray-800 pb-6">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium">{comment.author}</span>
-                  <span className="text-gray-400 text-sm">
-                    {new Date(comment.created_at).toLocaleDateString('tr-TR')}
-                  </span>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-gray-400 text-sm">
+                      {new Date(comment.created_at).toLocaleDateString('tr-TR')}
+                    </span>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="text-red-500 hover:text-red-400"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-gray-300">{comment.content}</p>
               </div>
