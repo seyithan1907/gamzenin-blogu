@@ -295,7 +295,7 @@ export default function Home() {
         <div className="lg:col-span-1">
           <div className="sticky top-4 space-y-8 max-h-screen overflow-y-auto scrollbar-hide">
             <AuthForm />
-            <PopularPosts posts={posts} />
+            <PopularPosts />
           </div>
         </div>
       </div>
