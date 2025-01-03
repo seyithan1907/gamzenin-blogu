@@ -168,7 +168,7 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
               İçerik
             </label>
             <Editor
-              apiKey="your-api-key"
+              apiKey="4bxgbqh0ynkjf8mzgqz0y7rkwjvkq7fn5gqek8vg1uo1c2dk"
               value={content}
               onEditorChange={(content) => setContent(content)}
               init={{
