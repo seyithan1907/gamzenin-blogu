@@ -31,12 +31,21 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [categories] = useState([
-    { id: 1, name: 'Kişisel' },
-    { id: 2, name: 'Seyahat' },
-    { id: 3, name: 'Yemek Tarifleri' },
-    { id: 4, name: 'Teknoloji' },
-    { id: 5, name: 'Yaşam' },
-    { id: 6, name: 'Moda' }
+    { id: 1, name: 'Sağlıklı Tarifler' },
+    { id: 2, name: 'Beslenme Bilimi' },
+    { id: 3, name: 'Diyet Türleri' },
+    { id: 4, name: 'Hastalık ve Beslenme' },
+    { id: 5, name: 'Fitness ve Sporcu Beslenmesi' },
+    { id: 6, name: 'Yeme Alışkanlıkları ve Psikoloji' },
+    { id: 7, name: 'Beslenme ve Çocuklar' },
+    { id: 8, name: 'Yaşam Tarzı ve Beslenme' },
+    { id: 9, name: 'Güncel Diyet Trendleri' },
+    { id: 10, name: 'Bitkisel Beslenme ve Veganlık' },
+    { id: 11, name: 'Detoks ve Arınma' },
+    { id: 12, name: 'Kilo Alma ve Verme Stratejileri' },
+    { id: 13, name: 'Sağlık İpuçları ve Tüyolar' },
+    { id: 14, name: 'Uzman Görüşleri ve Röportajlar' },
+    { id: 15, name: 'Gıda Güvenliği ve Etiket Okuma' }
   ]);
 
   useEffect(() => {
