@@ -288,28 +288,29 @@ export default function BlogPost({ params }: { params: { id: string } }) {
             </button>
           </form>
 
-          <div className="space-y-6">
+          <div className="space-y-6 mt-8">
             {comments.map((comment) => (
-              <div key={comment.id} className="border-b border-gray-800 pb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium">{comment.author}</span>
-                  <div className="flex items-center space-x-4">
-                    <span className="text-gray-400 text-sm">
+              <div key={comment.id} className="bg-gray-800 p-4 rounded-lg">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="font-bold text-white">{comment.author}</span>
+                    <span className="text-gray-400 text-sm ml-2">
                       {new Date(comment.created_at).toLocaleDateString('tr-TR')}
                     </span>
-                    {isAdmin && (
-                      <button
-                        onClick={() => handleDeleteComment(comment.id)}
-                        className="text-red-500 hover:text-red-400"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    )}
                   </div>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="text-red-500 hover:text-red-400"
+                      title="Yorumu Sil"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
-                <p className="text-gray-300">{comment.content}</p>
+                <p className="text-gray-300 mt-2">{comment.content}</p>
               </div>
             ))}
           </div>
