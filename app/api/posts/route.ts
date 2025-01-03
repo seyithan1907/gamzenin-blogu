@@ -1,11 +1,19 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { MongoClient } from 'mongodb';
 
 // GET - Tüm yazıları getir
 export async function GET() {
   try {
-    const client = await clientPromise;
+    const MONGODB_URI = process.env.MONGODB_URI;
+    if (!MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'MongoDB bağlantı bilgileri eksik' },
+        { status: 500 }
+      );
+    }
+
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
     const db = client.db("blog");
     
     const posts = await db
@@ -14,6 +22,7 @@ export async function GET() {
       .sort({ date: -1 })
       .toArray();
     
+    await client.close();
     return NextResponse.json(posts);
   } catch (error) {
     console.error('Yazılar yüklenirken hata:', error);
@@ -27,7 +36,16 @@ export async function GET() {
 // POST - Yeni yazı ekle
 export async function POST(request: Request) {
   try {
-    const client = await clientPromise;
+    const MONGODB_URI = process.env.MONGODB_URI;
+    if (!MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'MongoDB bağlantı bilgileri eksik' },
+        { status: 500 }
+      );
+    }
+
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
     const db = client.db("blog");
     
     const data = await request.json();
@@ -42,6 +60,7 @@ export async function POST(request: Request) {
     const result = await db.collection("posts").insertOne(post);
     const insertedPost = await db.collection("posts").findOne({ _id: result.insertedId });
     
+    await client.close();
     return NextResponse.json(insertedPost);
   } catch (error) {
     console.error('Yazı eklenirken hata:', error);

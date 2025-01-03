@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 
 // GET - Tekil yazıyı getir
 export async function GET(
@@ -8,7 +7,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const client = await clientPromise;
+    const MONGODB_URI = process.env.MONGODB_URI;
+    if (!MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'MongoDB bağlantı bilgileri eksik' },
+        { status: 500 }
+      );
+    }
+
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
     const db = client.db("blog");
     
     const post = await db
@@ -16,6 +24,7 @@ export async function GET(
       .findOne({ _id: new ObjectId(params.id) });
     
     if (!post) {
+      await client.close();
       return NextResponse.json(
         { error: 'Yazı bulunamadı' },
         { status: 404 }
@@ -28,6 +37,7 @@ export async function GET(
       { $inc: { views: 1 } }
     );
     
+    await client.close();
     return NextResponse.json({ ...post, views: post.views + 1 });
   } catch (error) {
     console.error('Yazı yüklenirken hata:', error);
@@ -44,7 +54,16 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const client = await clientPromise;
+    const MONGODB_URI = process.env.MONGODB_URI;
+    if (!MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'MongoDB bağlantı bilgileri eksik' },
+        { status: 500 }
+      );
+    }
+
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
     const db = client.db("blog");
     const data = await request.json();
     
@@ -54,6 +73,7 @@ export async function PUT(
     );
     
     if (result.matchedCount === 0) {
+      await client.close();
       return NextResponse.json(
         { error: 'Yazı bulunamadı' },
         { status: 404 }
@@ -64,6 +84,7 @@ export async function PUT(
       .collection("posts")
       .findOne({ _id: new ObjectId(params.id) });
     
+    await client.close();
     return NextResponse.json(updatedPost);
   } catch (error) {
     console.error('Yazı güncellenirken hata:', error);
@@ -80,7 +101,16 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const client = await clientPromise;
+    const MONGODB_URI = process.env.MONGODB_URI;
+    if (!MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'MongoDB bağlantı bilgileri eksik' },
+        { status: 500 }
+      );
+    }
+
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
     const db = client.db("blog");
     
     const result = await db.collection("posts").deleteOne({
@@ -88,12 +118,14 @@ export async function DELETE(
     });
     
     if (result.deletedCount === 0) {
+      await client.close();
       return NextResponse.json(
         { error: 'Yazı bulunamadı' },
         { status: 404 }
       );
     }
     
+    await client.close();
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Yazı silinirken hata:', error);
