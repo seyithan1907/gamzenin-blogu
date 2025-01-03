@@ -1,58 +1,70 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { supabase } from '@/lib/supabase';
 
-// Tekil blog yazısını getir
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const client = await clientPromise;
-    const db = client.db('blog');
-    const post = await db.collection('posts').findOne({ _id: new ObjectId(params.id) });
+    const { data: post, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('id', params.id)
+      .single();
 
+    if (error) throw error;
     if (!post) {
-      return NextResponse.json({ error: 'Yazı bulunamadı' }, { status: 404 });
+      return NextResponse.json({ error: 'Blog yazısı bulunamadı' }, { status: 404 });
     }
-
-    // Görüntülenme sayısını artır
-    await db.collection('posts').updateOne(
-      { _id: new ObjectId(params.id) },
-      { $inc: { views: 1 } }
-    );
 
     return NextResponse.json(post);
   } catch (error) {
-    return NextResponse.json({ error: 'Yazı yüklenirken hata oluştu' }, { status: 500 });
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Blog yazısı alınamadı' }, { status: 500 });
   }
 }
 
-// Blog yazısını güncelle
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const client = await clientPromise;
-    const db = client.db('blog');
     const updates = await request.json();
 
-    await db.collection('posts').updateOne(
-      { _id: new ObjectId(params.id) },
-      { $set: updates }
-    );
+    const { data: post, error } = await supabase
+      .from('blog_posts')
+      .update(updates)
+      .eq('id', params.id)
+      .select()
+      .single();
 
-    return NextResponse.json({ success: true });
+    if (error) throw error;
+    if (!post) {
+      return NextResponse.json({ error: 'Blog yazısı bulunamadı' }, { status: 404 });
+    }
+
+    return NextResponse.json(post);
   } catch (error) {
-    return NextResponse.json({ error: 'Yazı güncellenirken hata oluştu' }, { status: 500 });
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Blog yazısı güncellenemedi' }, { status: 500 });
   }
 }
 
-// Blog yazısını sil
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const client = await clientPromise;
-    const db = client.db('blog');
-    
-    await db.collection('posts').deleteOne({ _id: new ObjectId(params.id) });
-    
-    return NextResponse.json({ success: true });
+    const { error } = await supabase
+      .from('blog_posts')
+      .delete()
+      .eq('id', params.id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ message: 'Blog yazısı silindi' });
   } catch (error) {
-    return NextResponse.json({ error: 'Yazı silinirken hata oluştu' }, { status: 500 });
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Blog yazısı silinemedi' }, { status: 500 });
   }
 } 

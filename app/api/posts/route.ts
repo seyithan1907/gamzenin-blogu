@@ -1,35 +1,39 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import { supabase } from '@/lib/supabase';
 
 // Tüm blog yazılarını getir
 export async function GET() {
   try {
-    const client = await clientPromise;
-    const db = client.db('blog');
-    const posts = await db.collection('posts').find({}).sort({ date: -1 }).toArray();
+    const { data: posts, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
     return NextResponse.json(posts);
   } catch (error) {
-    return NextResponse.json({ error: 'Yazılar yüklenirken hata oluştu' }, { status: 500 });
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Blog yazıları alınamadı' }, { status: 500 });
   }
 }
 
 // Yeni blog yazısı ekle
 export async function POST(request: Request) {
   try {
-    const client = await clientPromise;
-    const db = client.db('blog');
     const post = await request.json();
-    
-    const result = await db.collection('posts').insertOne({
-      ...post,
-      date: new Date().toISOString(),
-      views: 0,
-      likes: 0,
-      comments: []
-    });
 
-    return NextResponse.json({ id: result.insertedId });
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .insert([post])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json({ error: 'Yazı eklenirken hata oluştu' }, { status: 500 });
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Blog yazısı eklenemedi' }, { status: 500 });
   }
 } 
