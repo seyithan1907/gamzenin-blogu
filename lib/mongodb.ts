@@ -1,10 +1,10 @@
 import { MongoClient } from 'mongodb';
 
 if (!process.env.MONGODB_URI) {
-  throw new Error('MONGODB_URI ortam değişkeni tanımlanmamış');
+  console.warn('MONGODB_URI ortam değişkeni tanımlanmamış');
 }
 
-const uri = process.env.MONGODB_URI;
+const uri = process.env.MONGODB_URI || '';
 const options = {};
 
 let client;
