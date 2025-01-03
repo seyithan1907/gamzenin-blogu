@@ -1,6 +1,28 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 
+interface BlogPost {
+  id: string;
+  title: string;
+  content: string;
+  summary?: string;
+  date: string;
+  category?: {
+    id: number;
+    name: string;
+  };
+  image?: string | null;
+  author?: string;
+  views?: number;
+  likes?: number;
+  comments?: Array<{
+    id: string;
+    name: string;
+    content: string;
+    date: string;
+  }>;
+}
+
 export async function GET() {
   try {
     // MongoDB bağlantısını al
@@ -15,7 +37,7 @@ export async function GET() {
     }
 
     // Her yazı için MongoDB'de _id oluştur
-    const postsWithId = posts.map(post => ({
+    const postsWithId = posts.map((post: BlogPost) => ({
       ...post,
       views: post.views || 0,
       likes: post.likes || 0,
