@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Header from '@/app/components/Header';
 import { getBlogPost, updateBlogPost, deleteBlogPost, incrementViews, getLikeStatus, toggleLike, type BlogPost } from '@/lib/blog';
 import { getComments, addComment, deleteComment, type Comment } from '@/lib/comments';
+import AdBanner from '@/app/components/AdBanner';
 
 const ADMIN_USERS = [
   {
@@ -217,9 +218,13 @@ export default function BlogPost({ params }: { params: { id: string } }) {
           </div>
         )}
 
+        <AdBanner />
+
         <div className="prose prose-invert max-w-none mb-8"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
+
+        <AdBanner />
 
         <div className="flex items-center space-x-4 mb-8">
           <button

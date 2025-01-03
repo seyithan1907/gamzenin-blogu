@@ -5,6 +5,7 @@ import AuthForm from "./components/AuthForm";
 import Image from "next/image";
 import PopularPosts from "./components/PopularPosts";
 import { getBlogPosts, type BlogPost } from "@/lib/blog";
+import AdBanner from './components/AdBanner';
 
 const ADMIN_USERS = [
   {
@@ -222,56 +223,59 @@ export default function Home() {
             </div>
           ) : (
             <div className="space-y-8">
-              {filteredPosts.map((post) => (
-                <article 
-                  key={post.id}
-                  className="bg-gray-900/90 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-gray-800
-                    hover:bg-gray-800/90 transition-all duration-300 transform hover:scale-[1.01]"
-                >
-                  {post.image && (
-                    <div className="relative w-full h-72 mb-6 rounded-lg overflow-hidden group">
-                      <Image
-                        src={post.image}
-                        alt={post.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                  )}
-                  <Link href={`/blog/${post.id}`}>
-                    <h2 className="text-2xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r 
-                      from-white to-gray-300 hover:from-blue-400 hover:to-purple-400 transition-all duration-300">
-                      {post.title}
-                    </h2>
-                  </Link>
-                  {post.category && (
-                    <span className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 text-white 
-                      text-sm px-4 py-1.5 rounded-full mb-4 font-medium shadow-lg">
-                      {post.category.name}
-                    </span>
-                  )}
-                  <p className="text-gray-300 mb-6 leading-relaxed">
-                    {post.summary || (post.content.length > 200
-                      ? cleanContent(post.content).substring(0, 200) + "..."
-                      : cleanContent(post.content)
+              {filteredPosts.map((post, index) => (
+                <>
+                  <article 
+                    key={post.id}
+                    className="bg-gray-900/90 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-gray-800
+                      hover:bg-gray-800/90 transition-all duration-300 transform hover:scale-[1.01]"
+                  >
+                    {post.image && (
+                      <div className="relative w-full h-72 mb-6 rounded-lg overflow-hidden group">
+                        <Image
+                          src={post.image}
+                          alt={post.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
                     )}
-                  </p>
-                  <div className="flex justify-between items-center text-sm border-t border-gray-800 pt-4">
-                    <div className="text-gray-400">
-                      {post.author && <span className="text-blue-400">{post.author} | </span>}
-                      <span>{new Date(post.date).toLocaleDateString('tr-TR')}</span>
+                    <Link href={`/blog/${post.id}`}>
+                      <h2 className="text-2xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r 
+                        from-white to-gray-300 hover:from-blue-400 hover:to-purple-400 transition-all duration-300">
+                        {post.title}
+                      </h2>
+                    </Link>
+                    {post.category && (
+                      <span className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 text-white 
+                        text-sm px-4 py-1.5 rounded-full mb-4 font-medium shadow-lg">
+                        {post.category.name}
+                      </span>
+                    )}
+                    <p className="text-gray-300 mb-6 leading-relaxed">
+                      {post.summary || (post.content.length > 200
+                        ? cleanContent(post.content).substring(0, 200) + "..."
+                        : cleanContent(post.content)
+                      )}
+                    </p>
+                    <div className="flex justify-between items-center text-sm border-t border-gray-800 pt-4">
+                      <div className="text-gray-400">
+                        {post.author && <span className="text-blue-400">{post.author} | </span>}
+                        <span>{new Date(post.date).toLocaleDateString('tr-TR')}</span>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <Link 
+                          href={`/blog/${post.id}`}
+                          className="text-blue-400 hover:text-blue-300 flex items-center group"
+                        >
+                          Devamını Oku 
+                          <span className="transform group-hover:translate-x-1 transition-transform duration-300">→</span>
+                        </Link>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <Link 
-                        href={`/blog/${post.id}`}
-                        className="text-blue-400 hover:text-blue-300 flex items-center group"
-                      >
-                        Devamını Oku 
-                        <span className="transform group-hover:translate-x-1 transition-transform duration-300">→</span>
-                      </Link>
-                    </div>
-                  </div>
-                </article>
+                  </article>
+                  {(index + 1) % 3 === 0 && <AdBanner />}
+                </>
               ))}
             </div>
           )}
