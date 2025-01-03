@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Header from '@/app/components/Header';
 
 interface BlogPost {
+  _id: string;
   id: string;
   title: string;
   content: string;
@@ -18,15 +19,26 @@ interface BlogPost {
   };
   image?: string | null;
   author?: string;
-  likes?: number;
+  likes: number;
+  views: number;
   comments?: Array<{
     id: string;
     name: string;
     content: string;
     date: string;
   }>;
-  views?: number;
 }
+
+const ADMIN_USERS = [
+  {
+    username: "seyithan1907",
+    password: "hsy190778"
+  },
+  {
+    username: "gamzeaktas",
+    password: "gamze6302"
+  }
+];
 
 export default function BlogPost({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -38,109 +50,127 @@ export default function BlogPost({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     // Blog yazısını yükle
-    const savedPosts = JSON.parse(localStorage.getItem('blog_posts') || '[]');
-    const foundPost = savedPosts.find((p: BlogPost) => p.id === params.id);
-    
-    if (!foundPost) {
-      router.push('/');
-      return;
-    }
+    const fetchPost = async () => {
+      try {
+        const response = await fetch(`/api/posts/${params.id}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            router.push('/');
+            return;
+          }
+          throw new Error('Yazı yüklenemedi');
+        }
+        const data = await response.json();
+        setPost(data);
+      } catch (error) {
+        console.error('Blog yazısı yüklenirken hata:', error);
+        router.push('/');
+      }
+    };
 
-    // Eğer likes ve comments yoksa ekle
-    if (!foundPost.likes) foundPost.likes = 0;
-    if (!foundPost.comments) foundPost.comments = [];
-
-    setPost(foundPost);
+    fetchPost();
 
     // Admin kontrolü
     const user = localStorage.getItem('user');
-    const isAdminUser = user === 'seyithan1907' || user === 'gamzeaktas';
+    const isAdminUser = ADMIN_USERS.some(admin => admin.username === user);
     setIsAdmin(isAdminUser);
 
     // Beğeni kontrolü
     const likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
     setIsLiked(likedPosts.includes(params.id));
-
-    // Görüntülenme sayısını artır
-    const updatedPosts = savedPosts.map((p: BlogPost) => {
-      if (p.id === params.id) {
-        return {
-          ...p,
-          views: (p.views || 0) + 1
-        };
-      }
-      return p;
-    });
-    localStorage.setItem('blog_posts', JSON.stringify(updatedPosts));
   }, [params.id, router]);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!isAdmin || !post) return;
 
     if (window.confirm('Bu yazıyı silmek istediğinize emin misiniz?')) {
-      const savedPosts = JSON.parse(localStorage.getItem('blog_posts') || '[]');
-      const updatedPosts = savedPosts.filter((p: BlogPost) => p.id !== post.id);
-      localStorage.setItem('blog_posts', JSON.stringify(updatedPosts));
-      router.push('/');
-    }
-  };
+      try {
+        const response = await fetch(`/api/posts/${post._id}`, {
+          method: 'DELETE'
+        });
 
-  const handleLike = () => {
-    if (!post) return;
+        if (!response.ok) throw new Error('Yazı silinemedi');
 
-    const likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
-    const newIsLiked = !isLiked;
-    
-    // Beğeni durumunu güncelle
-    if (newIsLiked) {
-      likedPosts.push(post.id);
-      post.likes! += 1;
-    } else {
-      const index = likedPosts.indexOf(post.id);
-      if (index > -1) {
-        likedPosts.splice(index, 1);
-        post.likes! -= 1;
+        router.push('/');
+      } catch (error) {
+        console.error('Yazı silinirken hata:', error);
+        alert('Yazı silinirken bir hata oluştu');
       }
     }
-
-    // Değişiklikleri kaydet
-    localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
-    setIsLiked(newIsLiked);
-
-    // Blog yazısını güncelle
-    const savedPosts = JSON.parse(localStorage.getItem('blog_posts') || '[]');
-    const updatedPosts = savedPosts.map((p: BlogPost) => 
-      p.id === post.id ? post : p
-    );
-    localStorage.setItem('blog_posts', JSON.stringify(updatedPosts));
-    setPost({ ...post });
   };
 
-  const handleComment = (e: React.FormEvent) => {
+  const handleLike = async () => {
+    if (!post) return;
+
+    try {
+      const newIsLiked = !isLiked;
+      const newLikes = post.likes + (newIsLiked ? 1 : -1);
+
+      const response = await fetch(`/api/posts/${post._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          likes: newLikes
+        }),
+      });
+
+      if (!response.ok) throw new Error('Beğeni güncellenemedi');
+
+      // Beğeni durumunu güncelle
+      const likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
+      if (newIsLiked) {
+        likedPosts.push(post._id);
+      } else {
+        const index = likedPosts.indexOf(post._id);
+        if (index > -1) {
+          likedPosts.splice(index, 1);
+        }
+      }
+      localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
+      
+      setIsLiked(newIsLiked);
+      setPost({ ...post, likes: newLikes });
+    } catch (error) {
+      console.error('Beğeni güncellenirken hata:', error);
+      alert('Beğeni güncellenirken bir hata oluştu');
+    }
+  };
+
+  const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!post || !comment.trim() || !commentName.trim()) return;
 
-    // Yeni yorum ekle
-    const newComment = {
-      id: Date.now().toString(),
-      name: commentName,
-      content: comment,
-      date: new Date().toISOString()
-    };
+    try {
+      // Yeni yorum ekle
+      const newComment = {
+        id: Date.now().toString(),
+        name: commentName,
+        content: comment,
+        date: new Date().toISOString()
+      };
 
-    post.comments!.push(newComment);
+      const response = await fetch(`/api/posts/${post._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          comments: [...(post.comments || []), newComment]
+        }),
+      });
 
-    // Blog yazısını güncelle
-    const savedPosts = JSON.parse(localStorage.getItem('blog_posts') || '[]');
-    const updatedPosts = savedPosts.map((p: BlogPost) => 
-      p.id === post.id ? post : p
-    );
-    localStorage.setItem('blog_posts', JSON.stringify(updatedPosts));
-    
-    // Formu temizle
-    setComment('');
-    setCommentName('');
-    setPost({ ...post });
+      if (!response.ok) throw new Error('Yorum eklenemedi');
+
+      // Formu temizle
+      setComment('');
+      setCommentName('');
+      setPost({ ...post, comments: [...(post.comments || []), newComment] });
+    } catch (error) {
+      console.error('Yorum eklenirken hata:', error);
+      alert('Yorum eklenirken bir hata oluştu');
+    }
   };
 
   const handleShare = (platform: string) => {
@@ -184,7 +214,7 @@ export default function BlogPost({ params }: { params: { id: string } }) {
               </button>
             )}
           </div>
-
+          
           {/* Kapak Resmi */}
           {post.image && (
             <div className="relative w-full h-96 mb-8">
@@ -340,8 +370,8 @@ export default function BlogPost({ params }: { params: { id: string } }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </Link>
-          </div>
-        </article>
+        </div>
+      </article>
       </main>
     </div>
   );

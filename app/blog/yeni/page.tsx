@@ -70,7 +70,7 @@ export default function NewPost() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!title || !content || !category) {
@@ -79,30 +79,31 @@ export default function NewPost() {
     }
 
     try {
-      // Mevcut blog yazılarını al
-      const existingPosts = JSON.parse(localStorage.getItem('blog_posts') || '[]');
-
       // Kategori bilgisini al
       const selectedCategory = CATEGORIES.find(c => c.id === parseInt(category));
 
       // Yeni yazıyı ekle
-      const newPost = {
-        id: Date.now().toString(),
-        title,
-        summary,
-        content,
-        category: {
-          id: selectedCategory?.id,
-          name: selectedCategory?.name
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        date: new Date().toISOString(),
-        image: image,
-        author: localStorage.getItem('user') // Yazar bilgisini ekle
-      };
+        body: JSON.stringify({
+          title,
+          summary,
+          content,
+          category: {
+            id: selectedCategory?.id,
+            name: selectedCategory?.name
+          },
+          image: image,
+          author: localStorage.getItem('user')
+        }),
+      });
 
-      // Yazıları güncelle
-      const updatedPosts = [newPost, ...existingPosts];
-      localStorage.setItem('blog_posts', JSON.stringify(updatedPosts));
+      if (!response.ok) {
+        throw new Error('Yazı eklenirken hata oluştu');
+      }
 
       // Başarı mesajı göster
       alert('Yazı başarıyla yayınlandı!');
