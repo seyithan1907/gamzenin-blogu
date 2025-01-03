@@ -218,8 +218,8 @@ export default function BlogPost({ params }: { params: { id: string } }) {
         )}
 
         <div className="prose prose-invert max-w-none mb-8"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
 
         <div className="flex items-center space-x-4 mb-8">
           <button
