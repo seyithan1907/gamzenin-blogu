@@ -23,19 +23,21 @@ interface BlogPost {
   }>;
 }
 
-export async function GET() {
+export async function POST(request: Request) {
   try {
+    const posts = await request.json();
+    
+    if (!Array.isArray(posts) || posts.length === 0) {
+      return NextResponse.json(
+        { error: 'Geçerli veri gönderilmedi' },
+        { status: 400 }
+      );
+    }
+
     // MongoDB bağlantısını al
     const client = await clientPromise;
     const db = client.db("blog");
     
-    // Mevcut yazıları localStorage'dan al
-    const posts = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('blog_posts') || '[]') : [];
-    
-    if (posts.length === 0) {
-      return NextResponse.json({ message: 'Aktarılacak yazı bulunamadı' });
-    }
-
     // Her yazı için MongoDB'de _id oluştur
     const postsWithId = posts.map((post: BlogPost) => ({
       ...post,
