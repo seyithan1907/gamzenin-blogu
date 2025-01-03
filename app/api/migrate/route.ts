@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import { MongoClient } from 'mongodb';
 
 interface BlogPost {
   id: string;
@@ -34,8 +34,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // MongoDB bağlantısını al
-    const client = await clientPromise;
+    const MONGODB_URI = process.env.MONGODB_URI;
+    if (!MONGODB_URI) {
+      return NextResponse.json(
+        { error: 'MongoDB bağlantı bilgileri eksik' },
+        { status: 500 }
+      );
+    }
+
+    // MongoDB bağlantısını oluştur
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
     const db = client.db("blog");
     
     // Her yazı için MongoDB'de _id oluştur
@@ -48,6 +57,8 @@ export async function POST(request: Request) {
 
     // Yazıları MongoDB'ye aktar
     const result = await db.collection("posts").insertMany(postsWithId);
+
+    await client.close();
 
     return NextResponse.json({
       message: `${result.insertedCount} yazı başarıyla aktarıldı`,
