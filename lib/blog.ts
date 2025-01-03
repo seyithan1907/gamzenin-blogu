@@ -74,4 +74,48 @@ export async function deleteBlogPost(id: string): Promise<void> {
 export async function incrementViews(id: string): Promise<void> {
   const { error } = await supabase.rpc('increment_views', { post_id: id });
   if (error) throw error;
+}
+
+export async function getLikeStatus(postId: string, userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('post_likes')
+    .select('id')
+    .eq('post_id', postId)
+    .eq('user_id', userId)
+    .single();
+
+  if (error) return false;
+  return !!data;
+}
+
+export async function toggleLike(postId: string, userId: string): Promise<void> {
+  const isLiked = await getLikeStatus(postId, userId);
+
+  if (isLiked) {
+    // Beğeniyi kaldır
+    const { error: deleteError } = await supabase
+      .from('post_likes')
+      .delete()
+      .eq('post_id', postId)
+      .eq('user_id', userId);
+
+    if (deleteError) throw deleteError;
+
+    // Beğeni sayısını azalt
+    await updateBlogPost(postId, {
+      likes: (await getBlogPost(postId))?.likes! - 1
+    });
+  } else {
+    // Beğeni ekle
+    const { error: insertError } = await supabase
+      .from('post_likes')
+      .insert([{ post_id: postId, user_id: userId }]);
+
+    if (insertError) throw insertError;
+
+    // Beğeni sayısını artır
+    await updateBlogPost(postId, {
+      likes: (await getBlogPost(postId))?.likes! + 1
+    });
+  }
 } 

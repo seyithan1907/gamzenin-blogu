@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Header from '@/app/components/Header';
-import { getBlogPost, updateBlogPost, deleteBlogPost, incrementViews, type BlogPost } from '@/lib/blog';
+import { getBlogPost, updateBlogPost, deleteBlogPost, incrementViews, getLikeStatus, toggleLike, type BlogPost } from '@/lib/blog';
 import { getComments, addComment, type Comment } from '@/lib/comments';
 
 const ADMIN_USERS = [
@@ -27,11 +27,14 @@ export default function BlogPost({ params }: { params: { id: string } }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLiked, setIsLiked] = useState(false);
+  const [user, setUser] = useState<string | null>(null);
 
   useEffect(() => {
     const user = localStorage.getItem('user');
     const isAdminUser = ADMIN_USERS.some(admin => admin.username === user);
     setIsAdmin(isAdminUser);
+    setUser(user);
 
     const loadPost = async () => {
       try {
@@ -57,8 +60,16 @@ export default function BlogPost({ params }: { params: { id: string } }) {
       }
     };
 
+    const checkLikeStatus = async () => {
+      if (user) {
+        const liked = await getLikeStatus(params.id, user);
+        setIsLiked(liked);
+      }
+    };
+
     loadPost();
     loadComments();
+    checkLikeStatus();
   }, [params.id]);
 
   const handleDelete = async () => {
@@ -77,19 +88,21 @@ export default function BlogPost({ params }: { params: { id: string } }) {
   };
 
   const handleLike = async () => {
-    if (!post) return;
+    if (!post || !user) {
+      alert('Beğeni yapabilmek için giriş yapmalısınız');
+      return;
+    }
 
     try {
-      const updatedPost = await updateBlogPost(params.id, {
-        likes: (post.likes || 0) + 1
-      });
-
+      await toggleLike(params.id, user);
+      const updatedPost = await getBlogPost(params.id);
       if (updatedPost) {
         setPost(updatedPost);
+        setIsLiked(!isLiked);
       }
     } catch (err) {
       console.error('Error:', err);
-      setError('Beğeni eklenirken bir hata oluştu');
+      setError('Beğeni işlemi sırasında bir hata oluştu');
     }
   };
 
@@ -195,9 +208,11 @@ export default function BlogPost({ params }: { params: { id: string } }) {
         <div className="flex items-center space-x-4 mb-8">
           <button
             onClick={handleLike}
-            className="flex items-center space-x-2 bg-gray-800 px-4 py-2 rounded hover:bg-gray-700"
+            className={`flex items-center space-x-2 px-4 py-2 rounded ${
+              isLiked ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-800 hover:bg-gray-700'
+            }`}
           >
-            <span>👍</span>
+            <span>{isLiked ? '❤️' : '🤍'}</span>
             <span>{post.likes || 0} beğeni</span>
           </button>
 
