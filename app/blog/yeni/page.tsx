@@ -101,8 +101,10 @@ export default function NewPost() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Yazı eklenirken hata oluştu');
+        throw new Error(data.error || 'Yazı eklenirken hata oluştu');
       }
 
       // Başarı mesajı göster
@@ -112,7 +114,7 @@ export default function NewPost() {
       router.push('/');
     } catch (error) {
       console.error('Blog yazısı kaydedilirken hata oluştu:', error);
-      alert('Yazı kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+      alert('Yazı kaydedilirken bir hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
     }
   };
 
