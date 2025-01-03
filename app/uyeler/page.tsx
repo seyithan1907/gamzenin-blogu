@@ -15,9 +15,9 @@ interface User {
   username: string;
   isAdmin: boolean;
   joinDate: string;
-  email: string | undefined;
-  firstName: string | undefined;
-  lastName: string | undefined;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
   registrationDate?: string;
 }
 
@@ -75,13 +75,17 @@ export default function MemberManagement() {
     const allUsers = [...defaultAdmins];
     
     // Kayıtlı üyeleri ekle (eğer aynı kullanıcı adı yoksa)
-    savedUsers.forEach((savedUser: User) => {
+    savedUsers.forEach((savedUser: Partial<User>) => {
       if (!allUsers.some(user => user.username === savedUser.username)) {
-        // Eğer joinDate yoksa şimdiki zamanı ekle
-        if (!savedUser.joinDate) {
-          savedUser.joinDate = new Date().toISOString();
-        }
-        allUsers.push(savedUser);
+        const newUser: User = {
+          username: savedUser.username || '',
+          isAdmin: savedUser.isAdmin || false,
+          joinDate: savedUser.joinDate || new Date().toISOString(),
+          email: savedUser.email,
+          firstName: savedUser.firstName,
+          lastName: savedUser.lastName
+        };
+        allUsers.push(newUser);
       }
     });
 
