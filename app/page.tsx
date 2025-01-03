@@ -4,6 +4,7 @@ import Link from "next/link";
 import AuthForm from "./components/AuthForm";
 import Image from "next/image";
 import PopularPosts from "./components/PopularPosts";
+import { getBlogPosts, type BlogPost } from "@/lib/blog";
 
 const ADMIN_USERS = [
   {
@@ -34,27 +35,12 @@ const CATEGORIES = [
   { id: 15, name: 'Gıda Güvenliği ve Etiket Okuma' }
 ];
 
-interface BlogPost {
-  id: string;
-  title: string;
-  content: string;
-  summary?: string;
-  date: string;
-  category?: {
-    id: number;
-    name: string;
-  };
-  image?: string | null;
-  author?: string;
-  views?: number;
-  likes?: number;
-}
-
 export default function Home() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // HTML entities'leri decode etmek için yardımcı fonksiyon
   const decodeHTMLEntities = (text: string) => {
@@ -83,40 +69,21 @@ export default function Home() {
     const isAdminUser = ADMIN_USERS.some(admin => admin.username === user);
     setIsAdmin(isAdminUser);
 
-    // Blog postlarını yükle
-    const fetchPosts = async () => {
+    // Blog yazılarını yükle
+    const loadPosts = async () => {
+      setLoading(true);
       try {
-        const response = await fetch('/api/posts');
-        if (!response.ok) throw new Error('Yazılar yüklenemedi');
-        const data = await response.json();
+        const data = await getBlogPosts();
         setPosts(data);
       } catch (error) {
         console.error('Blog yazıları yüklenirken hata:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchPosts();
+    loadPosts();
   }, []);
-
-  const handleDelete = async (id: string) => {
-    if (!isAdmin) return;
-
-    if (window.confirm("Bu yazıyı silmek istediğinize emin misiniz?")) {
-      try {
-        const response = await fetch(`/api/posts/${id}`, {
-          method: 'DELETE'
-        });
-
-        if (!response.ok) throw new Error('Yazı silinemedi');
-
-        // Yazıları güncelle
-        setPosts(posts.filter((post) => post.id !== id));
-      } catch (error) {
-        console.error('Yazı silinirken hata:', error);
-        alert('Yazı silinirken bir hata oluştu');
-      }
-    }
-  };
 
   // Filtrelenmiş yazıları hesapla
   const filteredPosts = posts.filter(post => {
@@ -126,15 +93,23 @@ export default function Home() {
     
     const matchesCategory = selectedCategory ? post.category?.id === selectedCategory : true;
 
-      return matchesSearch && matchesCategory;
-    });
+    return matchesSearch && matchesCategory;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
-      <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Ana İçerik - Sol Taraf */}
+        {/* Ana İçerik - Sol Taraf */}
         <div className="lg:col-span-3 space-y-8">
-            {/* Blog Başlığı */}
+          {/* Blog Başlığı */}
           <div className="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 p-12 rounded-lg shadow-2xl 
             transform hover:scale-[1.02] transition-all duration-300 relative overflow-hidden">
             {/* Animasyonlu arka plan efekti */}
@@ -179,9 +154,9 @@ export default function Home() {
                 <span>{CATEGORIES.length} Kategori</span>
               </div>
             </div>
-            </div>
+          </div>
             
-            {/* Arama ve Filtreleme */}
+          {/* Arama ve Filtreleme */}
           <div className="bg-gray-900/90 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-gray-800">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Arama */}
@@ -219,10 +194,10 @@ export default function Home() {
                   ))}
                 </select>
               </div>
-              </div>
-        </div>
+            </div>
+          </div>
 
-            {/* Blog Yazıları */}
+          {/* Blog Yazıları */}
           {filteredPosts.length === 0 ? (
             <div className="bg-gray-900/90 backdrop-blur-sm p-8 rounded-lg shadow-xl border border-gray-800 text-center">
               {posts.length === 0 ? (
@@ -294,14 +269,6 @@ export default function Home() {
                         Devamını Oku 
                         <span className="transform group-hover:translate-x-1 transition-transform duration-300">→</span>
                       </Link>
-                      {isAdmin && (
-                        <button
-                          onClick={() => handleDelete(post.id)}
-                          className="text-red-500 hover:text-red-400 transition-colors duration-300"
-                        >
-                          Sil
-                        </button>
-                      )}
                     </div>
                   </div>
                 </article>
@@ -322,9 +289,9 @@ export default function Home() {
               </Link>
             </div>
           )}
-          </div>
+        </div>
 
-          {/* Sağ Sidebar */}
+        {/* Sağ Sidebar */}
         <div className="lg:col-span-1">
           <div className="sticky top-4 space-y-8 max-h-screen overflow-y-auto scrollbar-hide">
             <AuthForm />

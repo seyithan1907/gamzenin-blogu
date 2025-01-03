@@ -5,29 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/app/components/Header';
-
-interface BlogPost {
-  _id: string;
-  id: string;
-  title: string;
-  content: string;
-  summary?: string;
-  date: string;
-  category?: {
-    id: number;
-    name: string;
-  };
-  image?: string | null;
-  author?: string;
-  likes: number;
-  views: number;
-  comments?: Array<{
-    id: string;
-    name: string;
-    content: string;
-    date: string;
-  }>;
-}
+import { getBlogPost, updateBlogPost, deleteBlogPost, incrementViews, updateLikes, type BlogPost } from '@/lib/blog';
+import { getComments, addComment, type Comment } from '@/lib/comments';
 
 const ADMIN_USERS = [
   {
@@ -43,32 +22,39 @@ const ADMIN_USERS = [
 export default function BlogPost({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [post, setPost] = useState<BlogPost | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [comment, setComment] = useState('');
   const [commentName, setCommentName] = useState('');
   const [isLiked, setIsLiked] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // Blog yazısını yükle
-    const fetchPost = async () => {
+    const loadData = async () => {
+      setLoading(true);
       try {
-        const response = await fetch(`/api/posts/${params.id}`);
-        if (!response.ok) {
-          if (response.status === 404) {
-            router.push('/');
-            return;
-          }
-          throw new Error('Yazı yüklenemedi');
+        // Blog yazısını yükle
+        const postData = await getBlogPost(params.id);
+        if (!postData) {
+          router.push('/');
+          return;
         }
-        const data = await response.json();
-        setPost(data);
+        setPost(postData);
+        
+        // Yorumları yükle
+        const commentsData = await getComments(params.id);
+        setComments(commentsData);
+        
+        // Görüntülenme sayısını artır
+        await incrementViews(params.id);
       } catch (error) {
-        console.error('Blog yazısı yüklenirken hata:', error);
+        console.error('Veriler yüklenirken hata:', error);
         router.push('/');
+      } finally {
+        setLoading(false);
       }
     };
-
-    fetchPost();
 
     // Admin kontrolü
     const user = localStorage.getItem('user');
@@ -78,23 +64,19 @@ export default function BlogPost({ params }: { params: { id: string } }) {
     // Beğeni kontrolü
     const likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
     setIsLiked(likedPosts.includes(params.id));
+
+    loadData();
   }, [params.id, router]);
 
   const handleDelete = async () => {
     if (!isAdmin || !post) return;
 
     if (window.confirm('Bu yazıyı silmek istediğinize emin misiniz?')) {
-      try {
-        const response = await fetch(`/api/posts/${post._id}`, {
-          method: 'DELETE'
-        });
-
-        if (!response.ok) throw new Error('Yazı silinemedi');
-
+      const success = await deleteBlogPost(post.id);
+      if (success) {
         router.push('/');
-      } catch (error) {
-        console.error('Yazı silinirken hata:', error);
-        alert('Yazı silinirken bir hata oluştu');
+      } else {
+        alert('Yazı silinirken bir hata oluştu.');
       }
     }
   };
@@ -102,39 +84,28 @@ export default function BlogPost({ params }: { params: { id: string } }) {
   const handleLike = async () => {
     if (!post) return;
 
+    const likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
+    const newIsLiked = !isLiked;
+    
     try {
-      const newIsLiked = !isLiked;
-      const newLikes = post.likes + (newIsLiked ? 1 : -1);
-
-      const response = await fetch(`/api/posts/${post._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          likes: newLikes
-        }),
-      });
-
-      if (!response.ok) throw new Error('Beğeni güncellenemedi');
-
-      // Beğeni durumunu güncelle
-      const likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
-      if (newIsLiked) {
-        likedPosts.push(post._id);
-      } else {
-        const index = likedPosts.indexOf(post._id);
-        if (index > -1) {
-          likedPosts.splice(index, 1);
+      const updatedPost = await updateLikes(post.id, newIsLiked);
+      if (updatedPost) {
+        // Beğeni durumunu güncelle
+        if (newIsLiked) {
+          likedPosts.push(post.id);
+        } else {
+          const index = likedPosts.indexOf(post.id);
+          if (index > -1) {
+            likedPosts.splice(index, 1);
+          }
         }
+        
+        localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
+        setIsLiked(newIsLiked);
+        setPost(updatedPost);
       }
-      localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
-      
-      setIsLiked(newIsLiked);
-      setPost({ ...post, likes: newLikes });
     } catch (error) {
       console.error('Beğeni güncellenirken hata:', error);
-      alert('Beğeni güncellenirken bir hata oluştu');
     }
   };
 
@@ -142,34 +113,24 @@ export default function BlogPost({ params }: { params: { id: string } }) {
     e.preventDefault();
     if (!post || !comment.trim() || !commentName.trim()) return;
 
+    setSubmitting(true);
     try {
-      // Yeni yorum ekle
-      const newComment = {
-        id: Date.now().toString(),
+      const newComment = await addComment({
+        post_id: post.id,
         name: commentName,
-        content: comment,
-        date: new Date().toISOString()
-      };
-
-      const response = await fetch(`/api/posts/${post._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          comments: [...(post.comments || []), newComment]
-        }),
+        content: comment
       });
 
-      if (!response.ok) throw new Error('Yorum eklenemedi');
-
-      // Formu temizle
-      setComment('');
-      setCommentName('');
-      setPost({ ...post, comments: [...(post.comments || []), newComment] });
+      if (newComment) {
+        setComments([...comments, newComment]);
+        setComment('');
+        setCommentName('');
+      }
     } catch (error) {
       console.error('Yorum eklenirken hata:', error);
-      alert('Yorum eklenirken bir hata oluştu');
+      alert('Yorum eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -189,6 +150,14 @@ export default function BlogPost({ params }: { params: { id: string } }) {
         break;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (!post) return null;
 
@@ -285,7 +254,7 @@ export default function BlogPost({ params }: { params: { id: string } }) {
 
           {/* Yorumlar */}
           <div className="border-t border-gray-800 pt-8">
-            <h2 className="text-2xl font-bold mb-6">Yorumlar ({post.comments?.length || 0})</h2>
+            <h2 className="text-2xl font-bold mb-6">Yorumlar ({comments.length})</h2>
             
             {/* Yorum Formu */}
             <form onSubmit={handleComment} className="mb-8">
@@ -299,6 +268,7 @@ export default function BlogPost({ params }: { params: { id: string } }) {
                   onChange={(e) => setCommentName(e.target.value)}
                   className="w-full p-2 bg-gray-800 rounded"
                   required
+                  disabled={submitting}
                 />
               </div>
               <div className="mb-4">
@@ -311,19 +281,23 @@ export default function BlogPost({ params }: { params: { id: string } }) {
                   className="w-full p-2 bg-gray-800 rounded"
                   rows={4}
                   required
+                  disabled={submitting}
                 />
               </div>
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                disabled={submitting}
+                className={`bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 ${
+                  submitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                Yorum Yap
+                {submitting ? 'Gönderiliyor...' : 'Yorum Yap'}
               </button>
             </form>
 
             {/* Yorum Listesi */}
             <div className="space-y-6">
-              {post.comments?.map((comment) => (
+              {comments.map((comment) => (
                 <div key={comment.id} className="bg-gray-900 p-4 rounded">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-bold">{comment.name}</h3>
@@ -370,8 +344,8 @@ export default function BlogPost({ params }: { params: { id: string } }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </Link>
-        </div>
-      </article>
+          </div>
+        </article>
       </main>
     </div>
   );

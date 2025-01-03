@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Editor } from '@tinymce/tinymce-react';
 import Header from '@/app/components/Header';
 import Image from 'next/image';
+import { createBlogPost } from '@/lib/blog';
 
 const ADMIN_USERS = [
   {
@@ -45,6 +46,7 @@ export default function NewPost() {
   const [image, setImage] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const user = localStorage.getItem('user');
@@ -78,43 +80,42 @@ export default function NewPost() {
       return;
     }
 
+    setLoading(true);
+
     try {
       // Kategori bilgisini al
       const selectedCategory = CATEGORIES.find(c => c.id === parseInt(category));
 
       // Yeni yazıyı ekle
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const newPost = {
+        title,
+        summary,
+        content,
+        category: {
+          id: selectedCategory?.id,
+          name: selectedCategory?.name
         },
-        body: JSON.stringify({
-          title,
-          summary,
-          content,
-          category: {
-            id: selectedCategory?.id,
-            name: selectedCategory?.name
-          },
-          image: image,
-          author: localStorage.getItem('user')
-        }),
-      });
+        date: new Date().toISOString(),
+        image: image,
+        author: localStorage.getItem('user')
+      };
 
-      const data = await response.json();
+      const result = await createBlogPost(newPost);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Yazı eklenirken hata oluştu');
+      if (result) {
+        // Başarı mesajı göster
+        alert('Yazı başarıyla yayınlandı!');
+
+        // Ana sayfaya yönlendir
+        router.push('/');
+      } else {
+        alert('Yazı kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
       }
-
-      // Başarı mesajı göster
-      alert('Yazı başarıyla yayınlandı!');
-
-      // Ana sayfaya yönlendir
-      router.push('/');
     } catch (error) {
       console.error('Blog yazısı kaydedilirken hata oluştu:', error);
-      alert('Yazı kaydedilirken bir hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
+      alert('Yazı kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -245,9 +246,12 @@ export default function NewPost() {
 
           <button
             type="submit"
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+            disabled={loading}
+            className={`bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 ${
+              loading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            Yazıyı Yayınla
+            {loading ? 'Yayınlanıyor...' : 'Yazıyı Yayınla'}
           </button>
         </form>
       </div>
