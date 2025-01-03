@@ -31,11 +31,12 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [categories] = useState([
-    { id: 1, name: 'Genel' },
+    { id: 1, name: 'Kişisel' },
     { id: 2, name: 'Seyahat' },
-    { id: 3, name: 'Yemek' },
-    { id: 4, name: 'Yaşam' },
-    { id: 5, name: 'Teknoloji' }
+    { id: 3, name: 'Yemek Tarifleri' },
+    { id: 4, name: 'Teknoloji' },
+    { id: 5, name: 'Yaşam' },
+    { id: 6, name: 'Moda' }
   ]);
 
   useEffect(() => {
@@ -258,7 +259,7 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
               İçerik
             </label>
             <Editor
-              apiKey="4bxgbqh0ynkjf8mzgqz0y7rkwjvkq7fn5gqek8vg1uo1c2dk"
+              apiKey={process.env.TINYMCE_API_KEY}
               init={{
                 height: 500,
                 menubar: true,
