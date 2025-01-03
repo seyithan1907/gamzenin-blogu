@@ -28,6 +28,15 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [categories] = useState([
+    { id: 1, name: 'Genel' },
+    { id: 2, name: 'Seyahat' },
+    { id: 3, name: 'Yemek' },
+    { id: 4, name: 'Yaşam' },
+    { id: 5, name: 'Teknoloji' }
+  ]);
 
   useEffect(() => {
     const user = localStorage.getItem('user');
@@ -47,7 +56,9 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
           setTitle(postData.title);
           setContent(postData.content);
           setSummary(postData.summary);
-          setImage(postData.image || '');
+          if (postData.image) {
+            setImagePreview(postData.image);
+          }
           setCategory(postData.category);
         }
       } catch (err) {
@@ -61,6 +72,24 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
     loadPost();
   }, [params.id, router]);
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview('');
+    setImage('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -70,11 +99,30 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
     }
 
     try {
+      let imageUrl = image;
+
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Görsel yüklenirken bir hata oluştu');
+        }
+
+        const data = await response.json();
+        imageUrl = data.url;
+      }
+
       await updateBlogPost(params.id, {
         title,
         content,
         summary,
-        image,
+        image: imageUrl,
         category,
         date: post?.date || new Date().toISOString(),
       });
@@ -128,6 +176,23 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium mb-2">
+              Kategori
+            </label>
+            <select
+              value={category.id}
+              onChange={(e) => setCategory(categories.find(c => c.id === Number(e.target.value)) || categories[0])}
+              className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none"
+            >
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
               Başlık
             </label>
             <input
@@ -153,14 +218,39 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
 
           <div>
             <label className="block text-sm font-medium mb-2">
-              Kapak Görseli URL
+              Kapak Görseli
             </label>
-            <input
-              type="text"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none"
-            />
+            <div className="space-y-4">
+              {imagePreview && (
+                <div className="relative w-full h-48">
+                  <img
+                    src={imagePreview}
+                    alt="Kapak görseli önizleme"
+                    className="w-full h-full object-cover rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:bg-red-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="block w-full text-sm text-gray-400
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-gray-800 file:text-white
+                  hover:file:bg-gray-700"
+              />
+            </div>
           </div>
 
           <div>
