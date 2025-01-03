@@ -173,17 +173,22 @@ export default function EditBlogPost({ params }: { params: { id: string } }) {
               onEditorChange={(content) => setContent(content)}
               init={{
                 height: 500,
-                menubar: false,
+                menubar: true,
                 plugins: [
                   'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                   'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
                   'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
                 ],
-                toolbar: 'undo redo | blocks | ' +
-                  'bold italic forecolor | alignleft aligncenter ' +
+                toolbar: 'undo redo | formatselect | ' +
+                  'bold italic backcolor | alignleft aligncenter ' +
                   'alignright alignjustify | bullist numlist outdent indent | ' +
                   'removeformat | help',
-                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                branding: false,
+                promotion: false,
+                language: 'tr',
+                skin: 'oxide-dark',
+                content_css: 'dark'
               }}
             />
           </div>
