@@ -106,7 +106,7 @@ export default function Home() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative">
         {/* Ana İçerik - Sol Taraf */}
         <div className="lg:col-span-3 space-y-8">
           {/* Blog Başlığı */}
@@ -292,11 +292,12 @@ export default function Home() {
         </div>
 
         {/* Sağ Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-4 space-y-8 max-h-screen overflow-y-auto scrollbar-hide">
-            <AuthForm />
-            <PopularPosts />
-          </div>
+        <div className="lg:col-span-1 space-y-8 lg:sticky lg:top-8 lg:self-start">
+          {/* Giriş Formu */}
+          <AuthForm />
+          
+          {/* Popüler Yazılar */}
+          <PopularPosts posts={posts} />
         </div>
       </div>
     </div>
