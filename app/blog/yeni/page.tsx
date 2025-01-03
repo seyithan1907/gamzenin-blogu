@@ -1,260 +1,161 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Editor } from '@tinymce/tinymce-react';
-import Header from '@/app/components/Header';
-import Image from 'next/image';
 import { createBlogPost } from '@/lib/blog';
 
-const ADMIN_USERS = [
-  {
-    username: "seyithan1907",
-    password: "hsy190778"
-  },
-  {
-    username: "gamzeaktas",
-    password: "gamze6302"
-  }
-];
+interface Category {
+  id: number;
+  name: string;
+}
 
-// Kategoriler
-const CATEGORIES = [
-  { id: 1, name: 'Sağlıklı Tarifler' },
-  { id: 2, name: 'Beslenme Bilimi' },
-  { id: 3, name: 'Diyet Türleri' },
-  { id: 4, name: 'Hastalık ve Beslenme' },
-  { id: 5, name: 'Fitness ve Sporcu Beslenmesi' },
-  { id: 6, name: 'Yeme Alışkanlıkları ve Psikoloji' },
-  { id: 7, name: 'Beslenme ve Çocuklar' },
-  { id: 8, name: 'Yaşam Tarzı ve Beslenme' },
-  { id: 9, name: 'Güncel Diyet Trendleri' },
-  { id: 10, name: 'Bitkisel Beslenme ve Veganlık' },
-  { id: 11, name: 'Detoks ve Arınma' },
-  { id: 12, name: 'Kilo Alma ve Verme Stratejileri' },
-  { id: 13, name: 'Sağlık İpuçları ve Tüyolar' },
-  { id: 14, name: 'Uzman Görüşleri ve Röportajlar' },
-  { id: 15, name: 'Gıda Güvenliği ve Etiket Okuma' }
-];
+interface BlogPost {
+  id: string;
+  title: string;
+  summary: string;
+  content: string;
+  category: Category;
+  date: string;
+  image: string | null;
+  author: string | null;
+}
 
-export default function NewPost() {
+export default function YeniBlogYazisi() {
   const router = useRouter();
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [category, setCategory] = useState('');
   const [summary, setSummary] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState<Category>({ id: 1, name: 'Genel' });
   const [image, setImage] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const user = localStorage.getItem('user');
-    const isAdminUser = ADMIN_USERS.some(admin => admin.username === user);
-    
-    if (isAdminUser) {
-      setIsLoggedIn(true);
-      setIsAdmin(true);
-    } else {
-      router.push('/');
-    }
-  }, [router]);
-
-  // Resim yükleme fonksiyonu
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const [author, setAuthor] = useState<string | null>('Gamze');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!title || !content || !category) {
-      alert('Lütfen başlık, kategori ve içerik alanlarını doldurun!');
-      return;
-    }
-
-    setLoading(true);
+    setIsLoading(true);
+    setError(null);
 
     try {
-      // Kategori bilgisini al
-      const selectedCategory = CATEGORIES.find(c => c.id === parseInt(category));
-
-      // Yeni yazıyı ekle
       const newPost = {
         title,
         summary,
         content,
-        category: {
-          id: selectedCategory?.id,
-          name: selectedCategory?.name
-        },
+        category,
         date: new Date().toISOString(),
-        image: image,
-        author: localStorage.getItem('user')
+        image,
+        author
       };
 
       const result = await createBlogPost(newPost);
 
       if (result) {
-        // Başarı mesajı göster
-        alert('Yazı başarıyla yayınlandı!');
-
-        // Ana sayfaya yönlendir
         router.push('/');
-      } else {
-        alert('Yazı kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+        router.refresh();
       }
-    } catch (error) {
-      console.error('Blog yazısı kaydedilirken hata oluştu:', error);
-      alert('Yazı kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } catch (err) {
+      setError('Blog yazısı eklenirken bir hata oluştu');
+      console.error('Error:', err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  if (!isLoggedIn || !isAdmin) {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <Header />
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Yeni Yazı Ekle</h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-lg mb-2">
-              Kapak Fotoğrafı
-              <span className="text-sm text-gray-400 ml-2">
-                (Önerilen boyut: 1200x630 piksel)
-              </span>
-            </label>
-            <div className="space-y-4">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none"
-              />
-              {image && (
-                <div className="relative w-full h-64">
-                  <Image
-                    src={image}
-                    alt="Kapak fotoğrafı önizleme"
-                    fill
-                    className="object-cover rounded"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setImage(null)}
-                    className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:bg-red-700"
-                  >
-                    Kaldır
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Yeni Blog Yazısı</h1>
+      
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
 
-          <div>
-            <label className="block text-lg mb-2">Başlık</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none"
-              required
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Başlık</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          />
+        </div>
 
-          <div>
-            <label className="block text-lg mb-2">Kategori</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none"
-              required
-            >
-              <option value="">Kategori seçin</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Özet</label>
+          <textarea
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            required
+            rows={3}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          />
+        </div>
 
-          <div>
-            <label className="block text-lg mb-2">
-              Özet
-              <span className="text-sm text-gray-400 ml-2">
-                (Ana sayfada görünecek kısa açıklama)
-              </span>
-            </label>
-            <textarea
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none"
-              rows={3}
-              maxLength={150}
-              placeholder="Yazınız için kısa bir özet girin (en fazla 150 karakter)"
-            />
-            <p className="text-sm text-gray-400 mt-1">
-              {summary.length}/150 karakter
-            </p>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">İçerik</label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+            rows={10}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          />
+        </div>
 
-          <div>
-            <label className="block text-lg mb-2">İçerik</label>
-            <Editor
-              apiKey="7nypjsdnr897d1t2j0psecllg4pct25cqbzw2xqcthksbok5"
-              initialValue=""
-              init={{
-                height: 500,
-                menubar: true,
-                disabled: false,
-                plugins: [
-                  'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                  'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                  'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                ],
-                toolbar: 'undo redo | blocks | ' +
-                  'bold italic forecolor | alignleft aligncenter ' +
-                  'alignright alignjustify | bullist numlist outdent indent | ' +
-                  'removeformat | help',
-                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                branding: false,
-                promotion: false,
-                skin: 'oxide-dark',
-                content_css: 'dark',
-                setup: function (editor) {
-                  editor.on('init', function () {
-                    editor.setContent('');
-                  });
-                }
-              }}
-              onEditorChange={(newContent) => setContent(newContent)}
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Kategori</label>
+          <select
+            value={category.id}
+            onChange={(e) => setCategory({ id: Number(e.target.value), name: e.target.options[e.target.selectedIndex].text })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          >
+            <option value="1">Genel</option>
+            <option value="2">Teknoloji</option>
+            <option value="3">Yaşam</option>
+            <option value="4">Seyahat</option>
+          </select>
+        </div>
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Yazar</label>
+          <input
+            type="text"
+            value={author || ''}
+            onChange={(e) => setAuthor(e.target.value || null)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Resim URL</label>
+          <input
+            type="url"
+            value={image || ''}
+            onChange={(e) => setImage(e.target.value || null)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          />
+        </div>
+
+        <div className="flex justify-end space-x-4">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            İptal
+          </button>
           <button
             type="submit"
-            disabled={loading}
-            className={`bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 ${
-              loading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            disabled={isLoading}
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
-            {loading ? 'Yayınlanıyor...' : 'Yazıyı Yayınla'}
+            {isLoading ? 'Kaydediliyor...' : 'Kaydet'}
           </button>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 } 

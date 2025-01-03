@@ -1,133 +1,77 @@
 import { supabase } from './supabase';
 
-export interface BlogPost {
-  id: string;
-  title: string;
-  content: string;
-  summary?: string;
-  date: string;
-  category?: {
-    id: number;
-    name: string;
-  };
-  image?: string | null;
-  author?: string;
-  views?: number;
-  likes?: number;
-  comments?: Array<{
-    id: string;
-    name: string;
-    content: string;
-    date: string;
-  }>;
+interface Category {
+  id: number;
+  name: string;
 }
 
-// Blog yazılarını getir
-export async function getBlogPosts() {
-  const { data, error } = await supabase
+interface BlogPost {
+  id: string;
+  title: string;
+  summary: string;
+  content: string;
+  category: Category;
+  date: string;
+  image: string | null;
+  author: string | null;
+  views?: number;
+  likes?: number;
+}
+
+export async function getBlogPosts(): Promise<BlogPost[]> {
+  const { data: posts, error } = await supabase
     .from('blog_posts')
     .select('*')
     .order('date', { ascending: false });
 
-  if (error) {
-    console.error('Blog yazıları alınırken hata:', error);
-    return [];
-  }
-
-  return data;
+  if (error) throw error;
+  return posts || [];
 }
 
-// Tekil blog yazısı getir
-export async function getBlogPost(id: string) {
-  const { data, error } = await supabase
+export async function getBlogPost(id: string): Promise<BlogPost | null> {
+  const { data: post, error } = await supabase
     .from('blog_posts')
     .select('*')
     .eq('id', id)
     .single();
 
-  if (error) {
-    console.error('Blog yazısı alınırken hata:', error);
-    return null;
-  }
-
-  return data;
+  if (error) throw error;
+  return post;
 }
 
-// Yeni blog yazısı ekle
-export async function createBlogPost(post: Omit<BlogPost, 'id'>) {
+export async function createBlogPost(post: Omit<BlogPost, 'id'>): Promise<BlogPost | null> {
   const { data, error } = await supabase
     .from('blog_posts')
     .insert([post])
     .select()
     .single();
 
-  if (error) {
-    console.error('Blog yazısı eklenirken hata:', error);
-    return null;
-  }
-
+  if (error) throw error;
   return data;
 }
 
-// Blog yazısını güncelle
-export async function updateBlogPost(id: string, post: Partial<BlogPost>) {
+export async function updateBlogPost(id: string, updates: Partial<BlogPost>): Promise<BlogPost | null> {
   const { data, error } = await supabase
     .from('blog_posts')
-    .update(post)
+    .update(updates)
     .eq('id', id)
     .select()
     .single();
 
-  if (error) {
-    console.error('Blog yazısı güncellenirken hata:', error);
-    return null;
-  }
-
+  if (error) throw error;
   return data;
 }
 
-// Blog yazısını sil
-export async function deleteBlogPost(id: string) {
+export async function deleteBlogPost(id: string): Promise<void> {
   const { error } = await supabase
     .from('blog_posts')
     .delete()
     .eq('id', id);
 
-  if (error) {
-    console.error('Blog yazısı silinirken hata:', error);
-    return false;
-  }
-
-  return true;
+  if (error) throw error;
 }
 
-// Görüntülenme sayısını artır
-export async function incrementViews(id: string) {
-  const { data, error } = await supabase.rpc('increment_views', { post_id: id });
-
-  if (error) {
-    console.error('Görüntülenme sayısı artırılırken hata:', error);
-    return false;
-  }
-
-  return true;
-}
-
-// Beğeni sayısını güncelle
-export async function updateLikes(id: string, increment: boolean) {
-  const { data, error } = await supabase
-    .from('blog_posts')
-    .update({ 
-      likes: increment ? supabase.raw('likes + 1') : supabase.raw('likes - 1') 
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Beğeni sayısı güncellenirken hata:', error);
-    return null;
-  }
-
-  return data;
+export async function incrementViews(id: string): Promise<void> {
+  const { error } = await supabase.rpc('increment_views', { post_id: id });
+  if (error) throw error;
 } 
