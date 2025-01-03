@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Editor } from '@tinymce/tinymce-react';
 import Header from '@/app/components/Header';
+import Image from 'next/image';
 import { createBlogPost } from '@/lib/blog';
 
 interface Category {
@@ -51,6 +52,18 @@ export default function YeniBlogYazisi() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Resim yükleme fonksiyonu
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -95,6 +108,40 @@ export default function YeniBlogYazisi() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-lg mb-2">
+              Kapak Fotoğrafı
+              <span className="text-sm text-gray-400 ml-2">
+                (Önerilen boyut: 1200x630 piksel)
+              </span>
+            </label>
+            <div className="space-y-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none"
+              />
+              {image && (
+                <div className="relative w-full h-64">
+                  <Image
+                    src={image}
+                    alt="Kapak fotoğrafı önizleme"
+                    fill
+                    className="object-cover rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImage(null)}
+                    className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full hover:bg-red-700"
+                  >
+                    Kaldır
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div>
             <label className="block text-lg mb-2">Başlık</label>
             <input
@@ -179,17 +226,6 @@ export default function YeniBlogYazisi() {
               value={author || ''}
               onChange={(e) => setAuthor(e.target.value || null)}
               className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-lg mb-2">Resim URL</label>
-            <input
-              type="url"
-              value={image || ''}
-              onChange={(e) => setImage(e.target.value || null)}
-              className="w-full p-2 rounded bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none"
-              placeholder="https://example.com/image.jpg"
             />
           </div>
 
